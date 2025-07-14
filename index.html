@@ -296,55 +296,49 @@
   const lista = document.getElementById("listaProdutos");
   lista.innerHTML = "";
 
-  let html = "";
-  let areaAnterior = "";
-  let somaFinalArea = 0;
+  const agrupadoPorArea = {};
 
   contagemProdutos.forEach((item, index) => {
-    const novaArea = item.área !== areaAnterior;
-
-    if (novaArea && areaAnterior !== "") {
-      // Mostrar total combinado da área anterior (pares + preços unitários somados)
-      html += `
-        <div style="padding:6px; text-align:right; font-weight:bold; color:#333;">
-          ➡️ Total da Área ${areaAnterior}: ${formatarValor(somaFinalArea)} (pares + preços)
-        </div>`;
-    }
-
-    if (novaArea) {
-      html += `<div style="margin-top:30px; padding:8px; background:#f8f9fa; border-left:4px solid #007bff;">
-        <strong>Área:</strong> ${item.área}
-      </div>`;
-      areaAnterior = item.área;
-      somaFinalArea = 0;
-    }
-
-    html += `
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed #ccc;">
-        <div>
-          <div><strong>${item.código}</strong></div>
-          <div>${item.pares} pares × ${formatarValor(item.preço)} = <strong>${formatarValor(item.valor)}</strong></div>
-        </div>
-        <div style="display:flex; gap:5px;">
-          <button onclick="editarProduto(${index})" style="background:#ffc107; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">✏️ Editar</button>
-          <button onclick="removerProduto(${index})" style="background:#dc3545; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">🗑️ Remover</button>
-        </div>
-      </div>
-    `;
-
-    somaFinalArea += item.pares + item.preço;
+    if (!agrupadoPorArea[item.área]) agrupadoPorArea[item.área] = [];
+    agrupadoPorArea[item.área].push({ ...item, index });
   });
 
-  // Total da última área
-  if (areaAnterior !== "") {
+  let html = "";
+
+  for (const area in agrupadoPorArea) {
+    const produtos = agrupadoPorArea[area];
+    let somaPares = 0;
+    let somaValor = 0;
+
+    html += `
+      <div style="margin-top:30px; padding:8px; background:#f8f9fa; border-left:4px solid #007bff;">
+        <strong>Área:</strong> ${area}
+      </div>`;
+
+    produtos.forEach(prod => {
+      html += `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed #ccc;">
+          <div>
+            <div><strong>${prod.código}</strong></div>
+            <div>${prod.pares} pares × ${formatarValor(prod.preço)} = <strong>${formatarValor(prod.valor)}</strong></div>
+          </div>
+          <div style="display:flex; gap:5px;">
+            <button onclick="editarProduto(${prod.index})" style="background:#ffc107; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">✏️ Editar</button>
+            <button onclick="removerProduto(${prod.index})" style="background:#dc3545; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">🗑️ Remover</button>
+          </div>
+        </div>`;
+
+      somaPares += prod.pares;
+      somaValor += prod.valor;
+    });
+
     html += `
       <div style="padding:6px; text-align:right; font-weight:bold; color:#333;">
-        ➡️ Total da Área ${areaAnterior}: ${formatarValor(somaFinalArea)} (pares + preços)
+        ➡️ Total da Área ${area}: ${somaPares} pares | Valor: ${formatarValor(somaValor)}
       </div>`;
   }
 
   lista.innerHTML = html;
-
   renderizarCamposManuais();
 }
 
