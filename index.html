@@ -209,6 +209,7 @@
   <script>
     let basePrecos = {};
     let contagemProdutos = [];
+    let ordemAreas = []; // Ordem manual das áreas
 
     const camposFixos = [
       "Caixa", "Saldo", "Pagamento", "Inventário", "Devolução", "Lucro",
@@ -282,6 +283,10 @@
       const valor = preco * quantidade;
 
       contagemProdutos.push({ área: area, código: codigo, pares: quantidade, preço: preco, valor: valor });
+      
+      if (!ordemAreas.includes(area)) {
+  ordemAreas.push(area);
+}
 
       renderizarLista();
 
@@ -305,15 +310,20 @@
 
   let html = "";
 
-  for (const area in agrupadoPorArea) {
+  ordemAreas.forEach(area => {
+  if (!agrupadoPorArea[area]) return;
     const produtos = agrupadoPorArea[area];
     let somaPares = 0;
     let somaValor = 0;
 
     html += `
-      <div style="margin-top:30px; padding:8px; background:#f8f9fa; border-left:4px solid #007bff;">
-        <strong>Área:</strong> ${area}
-      </div>`;
+  <div style="margin-top:30px; padding:8px; background:#f8f9fa; border-left:4px solid #007bff; display:flex; justify-content:space-between; align-items:center;">
+    <strong>Área:</strong> ${area}
+    <div style="display:flex; gap:5px;">
+      <button onclick="moverArea('${area}', -1)" style="font-size:16px;">⬆️</button>
+      <button onclick="moverArea('${area}', 1)" style="font-size:16px;">⬇️</button>
+    </div>
+  </div>`;
 
     produtos.forEach(prod => {
       html += `
@@ -336,7 +346,7 @@
       <div style="padding:6px; text-align:right; font-weight:bold; color:#333;">
         ➡️ Total da Área ${area}: ${somaPares} pares | Valor: ${formatarValor(somaValor)}
       </div>`;
-  }
+  }); // fim do ordemAreas.forEach
 
   lista.innerHTML = html;
   renderizarCamposManuais();
@@ -423,17 +433,17 @@ function exportarParaExcel() {
     agrupado[item.área].push(item);
   });
 
-  const dadosFinal = [["Área", "Código", "Pares", "Preço", "Valor"]];
+  const dadosFinal = [["Área", "Código", "Preço", "Pares", "Valor"]];
 
   for (const area in agrupado) {
     agrupado[area].forEach(item => {
       dadosFinal.push([
-        item.área,
-        item.código,
-        item.pares,
-        formatarValor(item.preço),
-        formatarValor(item.valor)
-      ]);
+  item.área,
+  item.código,
+  formatarValor(item.preço), // Preço vem primeiro
+  item.pares,                // Depois os pares
+  formatarValor(item.valor)
+]);
     });
     dadosFinal.push([""]); // espaço entre áreas
   }
@@ -472,18 +482,34 @@ function exportarParaExcel() {
 
   // Aumentar largura da 4ª coluna (Preço)
   ws['!cols'] = [
-    { wch: 12 }, // Área
-    { wch: 12 }, // Código
-    { wch: 10 }, // Pares
-    { wch: 15 }, // Preço (coluna 4)
-    { wch: 12 }  // Valor
-  ];
+  { wch: 12 }, // Área
+  { wch: 12 }, // Código
+  { wch: 10 }, // Preço
+  { wch: 15 }, // Pares
+  { wch: 12 }  // Valor
+];
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Contagem");
 
   XLSX.writeFile(wb, "contagem_ziza.xlsx");
 }
+
+function moverArea(area, direcao) {
+  const index = ordemAreas.indexOf(area);
+  if (index === -1) return;
+
+  const novoIndex = index + direcao;
+  if (novoIndex < 0 || novoIndex >= ordemAreas.length) return;
+
+  // Troca as posições na lista
+  const temp = ordemAreas[index];
+  ordemAreas[index] = ordemAreas[novoIndex];
+  ordemAreas[novoIndex] = temp;
+
+  renderizarLista(); // Atualiza a tela com nova ordem
+}
+
   </script>
 </body>
 </html>
