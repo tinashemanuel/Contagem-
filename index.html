@@ -316,34 +316,50 @@ function limparContagem() {
 }
 
     function adicionarProduto() {
-      const area = document.getElementById("areaInput").value.trim().toUpperCase();
-      const codigo = document.getElementById("codigoInput").value.trim().toUpperCase();
-      const quantidade = parseInt(document.getElementById("quantidadeInput").value.trim());
-      const preco = basePrecos[codigo];
+  const area = document.getElementById("areaInput").value.trim().toUpperCase();
+  const codigo = document.getElementById("codigoInput").value.trim().toUpperCase();
+  const quantidade = parseInt(document.getElementById("quantidadeInput").value.trim());
+  let preco = basePrecos[codigo];
 
-      if (!area) return alert("⚠️ Digite a área.");
-      if (!codigo) return alert("⚠️ Digite o código.");
-      if (!quantidade || quantidade <= 0) return alert("⚠️ Quantidade inválida.");
-      if (!preco) return alert("⚠️ Código não encontrado na base!");
+  if (!area) return alert("⚠️ Digite a área.");
+  if (!codigo) return alert("⚠️ Digite o código.");
+  if (!quantidade || quantidade <= 0) return alert("⚠️ Quantidade inválida.");
 
-      const valor = preco * quantidade;
+  if (!preco) {
+    const desejaAdicionar = confirm(`Código "${codigo}" não encontrado na base. Deseja adicionar manualmente?`);
+    if (!desejaAdicionar) return;
 
-      contagemProdutos.push({ área: area, código: codigo, pares: quantidade, preço: preco, valor: valor });
-      
-      if (!ordemAreas.includes(area)) {
-  ordemAreas.push(area);
-}
+    // Pede preço manual
+    const precoManualStr = prompt(`Digite o preço para o código "${codigo}":`);
+    const precoManual = parseFloat(precoManualStr.replace(',', '.'));
 
-      renderizarLista();
-
-      document.getElementById("codigoInput").value = "";
-      document.getElementById("quantidadeInput").value = "";
-      document.getElementById("codigoInput").focus();
-
-      atualizarTotaisGerais();
-      atualizarTotaisGerais();
-salvarContagem();
+    if (isNaN(precoManual) || precoManual <= 0) {
+      alert("⚠️ Preço inválido. Produto não adicionado.");
+      return;
     }
+
+    // Adiciona na base de preços
+    basePrecos[codigo] = precoManual;
+    preco = precoManual;
+  }
+
+  const valor = preco * quantidade;
+
+  contagemProdutos.push({ área: area, código: codigo, pares: quantidade, preço: preco, valor: valor });
+
+  if (!ordemAreas.includes(area)) {
+    ordemAreas.push(area);
+  }
+
+  renderizarLista();
+
+  document.getElementById("codigoInput").value = "";
+  document.getElementById("quantidadeInput").value = "";
+  document.getElementById("codigoInput").focus();
+
+  atualizarTotaisGerais();
+  salvarContagem();
+}
 
     function renderizarLista() {
   const lista = document.getElementById("listaProdutos");
