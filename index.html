@@ -263,12 +263,26 @@
           status.textContent = "✅ Base carregada com sucesso!";
           status.className = "sucesso";
           document.getElementById("formulario").style.display = "block";
+          localStorage.setItem("basePrecosZiza", JSON.stringify(basePrecos));
           renderizarCamposManuais();
         }
       };
 
       reader.readAsArrayBuffer(file);
     });
+
+const baseSalva = localStorage.getItem("basePrecosZiza");
+if (baseSalva) {
+  try {
+    basePrecos = JSON.parse(baseSalva);
+    document.getElementById("formulario").style.display = "block";
+    document.getElementById("statusMensagem").textContent = "✅ Base carregada do armazenamento local!";
+    document.getElementById("statusMensagem").className = "sucesso";
+    renderizarCamposManuais();
+  } catch (e) {
+    console.warn("Erro ao restaurar base de preços:", e);
+  }
+}
 
 function salvarContagem() {
   const dados = {
@@ -307,6 +321,8 @@ function limparContagem() {
   valoresManuais = {};
 
   localStorage.removeItem("contagemZiza");
+  localStorage.removeItem("basePrecosZiza");
+basePrecos = {};
 
   renderizarLista();
   renderizarCamposManuais();
