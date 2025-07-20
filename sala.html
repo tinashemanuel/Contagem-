@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Modo Sincronizado - Contagem Ziza</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background-color: #f9f9f9;
+      padding: 50px;
+    }
+    .box {
+      background: white;
+      padding: 30px;
+      max-width: 400px;
+      margin: auto;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    input {
+      padding: 10px;
+      width: 90%;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1em;
+    }
+    button {
+      padding: 12px 20px;
+      margin-top: 10px;
+      font-size: 1em;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .criar {
+      background-color: #28a745;
+      color: white;
+    }
+    .entrar {
+      background-color: #007bff;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>📦 Contagem Ziza - Modo Sincronizado</h2>
+
+    <button class="criar" onclick="criarSala()">➕ Criar Nova Sala</button>
+
+    <hr />
+
+    <input type="text" id="codigoSala" placeholder="Digite o código da sala" />
+    <button class="entrar" onclick="entrarSala()">🔑 Entrar</button>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+    import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
+
+    // Configuração do Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyAhIcEttYA_zNawM-TgBX20pJ2rFnZ4UQM",
+      authDomain: "contagem-2f002.firebaseapp.com",
+      projectId: "contagem-2f002",
+      storageBucket: "contagem-2f002.firebasestorage.app",
+      messagingSenderId: "606594368212",
+      appId: "1:606594368212:web:c105c3f9852e59f4667141",
+      databaseURL: "https://contagem-2f002-default-rtdb.firebaseio.com"
+    };
+
+    // Inicializar Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Gera código aleatório para a sala (exemplo: ZABCD)
+    function gerarCodigoSala() {
+      const letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      let codigo = "Z";
+      for (let i = 0; i < 4; i++) {
+        codigo += letras.charAt(Math.floor(Math.random() * letras.length));
+      }
+      return codigo;
+    }
+
+    // Criar nova sala no Firebase
+    window.criarSala = async function () {
+      try {
+        const codigo = gerarCodigoSala();
+        const salaRef = ref(db, "salas/" + codigo);
+        await set(salaRef, {
+          criadaEm: new Date().toISOString(),
+          usuarios: {},
+          contagem: {
+            produtos: [],
+            ordemAreas: [],
+            valores: {}
+          }
+        });
+        // Redireciona para a página da contagem com código da sala
+        window.location.href = `contagem.html?sala=${codigo}`;
+      } catch (e) {
+        alert("Erro ao criar sala: " + e.message);
+        console.error(e);
+      }
+    }
+
+    // Entrar em sala existente no Firebase
+    window.entrarSala = async function () {
+      const codigo = document.getElementById("codigoSala").value.trim().toUpperCase();
+      if (!codigo) {
+        alert("⚠️ Digite o código da sala.");
+        return;
+      }
+      try {
+        const salaRef = ref(db);
+        const snapshot = await get(child(salaRef, "salas/" + codigo));
+        if (snapshot.exists()) {
+          window.location.href = `contagem.html?sala=${codigo}`;
+        } else {
+          alert("❌ Sala não encontrada. Verifique o código.");
+        }
+      } catch(e) {
+        alert("Erro ao buscar sala: " + e.message);
+        console.error(e);
+      }
+    }
+  </script>
+</body>
+</html>
