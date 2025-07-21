@@ -390,7 +390,14 @@ basePrecos = {};
 
   const valor = preco * quantidade;
 
-  contagemProdutos.push({ área: area, código: codigo, pares: quantidade, preço: preco, valor: valor });
+  contagemProdutos.push({
+  área: area,
+  código: codigo,
+  pares: quantidade,
+  preço: preco,
+  valor: valor,
+  autor: usuarioId // adiciona o autor
+});
 
   if (!ordemAreas.includes(area)) {
     ordemAreas.push(area);
@@ -442,9 +449,11 @@ salvarContagemFirebase();
             <div>${prod.pares} pares × ${formatarValor(prod.preço)} = <strong>${formatarValor(prod.valor)}</strong></div>
           </div>
           <div style="display:flex; gap:5px;">
-            <button onclick="editarProduto(${prod.index})" style="background:#ffc107; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">✏️ Editar</button>
-            <button onclick="removerProduto(${prod.index})" style="background:#dc3545; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">🗑️ Remover</button>
-          </div>
+  ${prod.autor === usuarioId ? `
+    <button onclick="editarProduto(${prod.index})" style="background:#ffc107; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">✏️ Editar</button>
+    <button onclick="removerProduto(${prod.index})" style="background:#dc3545; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">🗑️ Remover</button>
+  ` : ''}
+</div>
         </div>`;
 
       somaPares += prod.pares;
@@ -529,6 +538,7 @@ salvarContagemFirebase();
 
   document.getElementById("valorTotal").textContent = formatarValor(total);
   document.getElementById("valorConclusao").textContent = formatarValor(conclusao);
+  salvarContagemFirebase();
 }
     
 function formatarValor(num) {
