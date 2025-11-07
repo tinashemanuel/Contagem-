@@ -123,18 +123,24 @@
 
     // Funções produtos
     async function adicionarProduto(){
-      const area = document.getElementById("areaInput").value.trim().toUpperCase();
-      const codigo = document.getElementById("codigoInput").value.trim().toUpperCase();
-      const quantidade = parseInt(document.getElementById("quantidadeInput").value.trim());
-      const preco = basePrecos[codigo];
-      if(!area || !codigo || !quantidade || !preco){ alert("⚠️ Preencha todos os campos corretamente!"); return; }
+      try {
+        const area = document.getElementById("areaInput").value.trim().toUpperCase();
+        const codigo = document.getElementById("codigoInput").value.trim().toUpperCase();
+        const quantidade = parseInt(document.getElementById("quantidadeInput").value.trim());
+        const preco = basePrecos[codigo];
+        if(!area || !codigo || !quantidade || !preco){ alert("⚠️ Preencha todos os campos corretamente!"); return; }
 
-      const produto = { área: area, código: codigo, pares: quantidade, preço: preco, valor: preco*quantidade };
-      await push(produtosRef, produto);
+        const produto = { área: area, código: codigo, pares: quantidade, preço: preco, valor: preco*quantidade };
+        await push(produtosRef, produto);
+        console.log("✅ Produto adicionado:", produto);
 
-      document.getElementById("codigoInput").value = "";
-      document.getElementById("quantidadeInput").value = "";
-      document.getElementById("codigoInput").focus();
+        document.getElementById("codigoInput").value = "";
+        document.getElementById("quantidadeInput").value = "";
+        document.getElementById("codigoInput").focus();
+      } catch(e) {
+        console.error("Erro ao adicionar produto:", e);
+        alert("❌ Erro ao adicionar produto. Veja console para detalhes.");
+      }
     }
 
     async function editarProduto(index){
@@ -177,7 +183,6 @@
       if(areaAnterior!=="") html+=`<div style="padding:6px;text-align:right;font-weight:bold;color:#333;">➡️ Total da Área ${areaAnterior}: ${formatarValor(somaFinalArea)} (pares+preços)</div>`;
       lista.innerHTML=html;
 
-      // Adicionar eventos para editar/remover
       document.querySelectorAll(".btn-editar").forEach(btn=>btn.addEventListener("click", e=>editarProduto(e.target.dataset.index)));
       document.querySelectorAll(".btn-remover").forEach(btn=>btn.addEventListener("click", e=>removerProduto(e.target.dataset.index)));
 
@@ -210,7 +215,6 @@
 
     function formatarValor(num){ return Number.isInteger(num)?num.toString():num.toFixed(2); }
 
-    // Exportar Excel
     function exportarParaExcel(){
       if(contagemProdutos.length===0){ alert("⚠️ Nenhum item para exportar."); return; }
       const agrupado={};
