@@ -53,7 +53,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-    import { getDatabase, ref, set, push, onValue } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
+    import { getDatabase, ref, set, push, onValue, get } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
 
     // Config Firebase
     const firebaseConfig = {
@@ -71,8 +71,29 @@
 
     // Sala
     function getCodigoSala() { return new URLSearchParams(window.location.search).get("sala"); }
-    const salaCodigo = getCodigoSala();
-    if (!salaCodigo) { alert("Código da sala inválido!"); throw new Error("Sala não informada."); }
+    let salaCodigo = getCodigoSala();
+    if(!salaCodigo){
+      // Se não houver sala na URL, gera aleatória
+      salaCodigo = "SALA" + Math.floor(Math.random()*9000+1000);
+      alert(`Sala não informada. Criando sala temporária: ${salaCodigo}`);
+      window.history.replaceState({}, "", `?sala=${salaCodigo}`);
+    }
+
+    const salaRef = ref(db, `salas/${salaCodigo}`);
+
+    // Cria a sala se não existir
+    async function criarSalaSeNaoExistir(){
+      const snapshot = await get(salaRef);
+      if(!snapshot.exists()){
+        await set(salaRef, {
+          criadaEm: new Date().toISOString(),
+          usuarios: {},
+          contagem: { produtos: [], ordemAreas: [], valores: {} }
+        });
+        console.log("Sala criada automaticamente:", salaCodigo);
+      }
+    }
+    await criarSalaSeNaoExistir();
 
     let basePrecos = {};
     let contagemProdutos = [];
@@ -104,13 +125,16 @@
         if(planilha.length===0){ status.textContent="⚠️ Planilha vazia"; return; }
 
         const colunas = Object.keys(planilha[0]);
-        const nomeCodigo = colunas.find(c=>c.includes('码')||c.toLowerCase().includes('código'));
-        const nomePreco = colunas.find(c=>c.includes('价')||c.toLowerCase().includes('preço'));
+        const nomeCodigo = colunas.find(c=>c.toLowerCase().includes('código'));
+        const nomePreco = colunas.find(c=>c.toLowerCase().includes('preço'));
 
         if(!nomeCodigo||!nomePreco){ status.textContent="⚠️ Colunas código/preço não encontradas"; return; }
 
         basePrecos = {};
-        planilha.forEach(row=>{ if(row[nomeCodigo] && row[nomePreco]) basePrecos[String(row[nomeCodigo]).trim().toUpperCase()] = parseFloat(row[nomePreco]); });
+        planilha.forEach(row=>{ 
+          if(row[nomeCodigo] && row[nomePreco]) 
+            basePrecos[String(row[nomeCodigo]).trim().toUpperCase()] = parseFloat(row[nomePreco]); 
+        });
 
         if(Object.keys(basePrecos).length===0){ status.textContent="⚠️ Nenhum código/preço válido"; return; }
 
@@ -149,16 +173,16 @@
       const pares = parseInt(novoValor);
       if(!pares || pares <= 0){ alert("⚠️ Quantidade inválida."); return; }
 
-      const produtoRef = ref(db, `salas/${salaCodigo}/contagem/produtos/${produto.id}`);
-      await set(produtoRef, { ...produto, pares, valor: produto.preço * pares });
+      const produtoRefEdit = ref(db, `salas/${salaCodigo}/contagem/produtos/${produto.id}`);
+      await set(produtoRefEdit, { ...produto, pares, valor: produto.preço * pares });
     }
 
     async function removerProduto(index){
       const produto = contagemProdutos[index];
       if(!confirm(`Deseja remover ${produto.código}?`)) return;
 
-      const produtoRef = ref(db, `salas/${salaCodigo}/contagem/produtos/${produto.id}`);
-      await set(produtoRef, null);
+      const produtoRefRemover = ref(db, `salas/${salaCodigo}/contagem/produtos/${produto.id}`);
+      await set(produtoRefRemover, null);
     }
 
     function renderizarLista(){
