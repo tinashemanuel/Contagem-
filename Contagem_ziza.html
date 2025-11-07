@@ -4,13 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>CONTAGEM ZIZA - Modo Sincronizado</title>
+
+  <!-- Biblioteca XLSX -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
   <script type="module">
-    // ===============================
-    // 🔥 Firebase Configuração
-    // ===============================
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
-    import { getDatabase, ref, set, get, onValue, push, update } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+    // ------------------------- FIREBASE -------------------------
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+    import { getDatabase, ref, set, update, get, onValue } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAhIcEttYA_zNawM-TgBX20pJ2rFnZ4UQM",
@@ -21,245 +22,211 @@
       messagingSenderId: "606594368212",
       appId: "1:606594368212:web:c105c3f9852e59f4667141"
     };
+
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
+    const salaId = "SALA123"; // sala fixa por enquanto
 
-    // ===============================
-    // ⚙️ Variáveis Globais
-    // ===============================
-    let salaAtual = prompt("Digite o código da sala (ex: SALA123):").trim().toUpperCase();
-    const userId = "user_" + Date.now();
+    const produtosRef = ref(db, `salas/${salaId}/contagem/produtos`);
+    const valoresRef = ref(db, `salas/${salaId}/contagem/valores`);
+    const ordemAreasRef = ref(db, `salas/${salaId}/contagem/ordemAreas`);
 
-    let basePrecos = {};
-    let contagemProdutos = [];
-    let valoresManuais = {};
-    const camposFixos = [
-      "Caixa", "Saldo", "Pagamento", "Inventário", "Devolução", "Lucro",
-      ...Array.from({ length: 30 }, (_, i) => `Lucro dia ${i + 2}`),
-      "Fixo"
-    ];
+    // ------------------------- DOM ELEMENTS -------------------------
+    const areaInput = document.getElementById("area");
+    const codigoInput = document.getElementById("codigo");
+    const paresInput = document.getElementById("pares");
+    const precoInput = document.getElementById("preco");
+    const adicionarBtn = document.getElementById("adicionar");
+    const tabela = document.getElementById("tabela");
+    const valoresDiv = document.getElementById("valores");
+    const exportarBtn = document.getElementById("exportarExcel");
 
-    const salaRef = ref(db, "salas/" + salaAtual);
+    // ------------------------- ADICIONAR PRODUTO -------------------------
+    adicionarBtn.addEventListener("click", async () => {
+      const area = areaInput.value.trim();
+      const codigo = codigoInput.value.trim();
+      const pares = parseInt(paresInput.value);
+      const preco = parseFloat(precoInput.value);
 
-    // ===============================
-    // 👥 Registrar Usuário na Sala
-    // ===============================
-    update(ref(db, `salas/${salaAtual}/usuarios/${userId}`), true);
-
-    // ===============================
-    // 📦 Carregar Base de Dados Excel
-    // ===============================
-    document.getElementById("arquivoExcel").addEventListener("change", function (e) {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: "array" });
-        const primeira = workbook.SheetNames[0];
-        const planilha = XLSX.utils.sheet_to_json(workbook.Sheets[primeira]);
-
-        const status = document.getElementById("statusMensagem");
-        if (planilha.length === 0) {
-          status.textContent = "⚠️ Planilha vazia!";
-          status.className = "erro";
-          return;
-        }
-
-        const colunas = Object.keys(planilha[0]);
-        const nomeCodigo = colunas.find(c => c.toLowerCase().includes('código') || c.toLowerCase().includes('code'));
-        const nomePreco = colunas.find(c => c.toLowerCase().includes('preço') || c.toLowerCase().includes('price'));
-
-        if (!nomeCodigo || !nomePreco) {
-          status.textContent = "⚠️ Colunas código/preço não encontradas!";
-          status.className = "erro";
-          return;
-        }
-
-        basePrecos = {};
-        planilha.forEach(row => {
-          if (row[nomeCodigo] && row[nomePreco]) {
-            basePrecos[String(row[nomeCodigo]).trim().toUpperCase()] = parseFloat(row[nomePreco]);
-          }
-        });
-
-        status.textContent = "✅ Base carregada com sucesso!";
-        status.className = "sucesso";
-        document.getElementById("formulario").style.display = "block";
-
-        renderizarCamposManuais();
-      };
-      reader.readAsArrayBuffer(file);
-    });
-
-    // ===============================
-    // ➕ Adicionar Produto
-    // ===============================
-    document.querySelector(".btn-add").addEventListener("click", () => {
-      const area = document.getElementById("areaInput").value.trim().toUpperCase();
-      const codigo = document.getElementById("codigoInput").value.trim().toUpperCase();
-      const quantidade = parseInt(document.getElementById("quantidadeInput").value.trim());
-      const preco = basePrecos[codigo];
-
-      if (!area) return alert("Digite a área.");
-      if (!codigo) return alert("Digite o código.");
-      if (!quantidade || quantidade <= 0) return alert("Quantidade inválida.");
-      if (!preco) return alert("Código não encontrado na base!");
-
-      const valor = preco * quantidade;
-      const novoProduto = { area, codigo, pares: quantidade, preco, valor };
-
-      const produtosRef = ref(db, `salas/${salaAtual}/contagem/produtos`);
-      get(produtosRef).then(snapshot => {
-        const produtos = snapshot.exists() ? snapshot.val() : [];
-        produtos.push(novoProduto);
-        set(produtosRef, produtos);
-      });
-
-      document.getElementById("codigoInput").value = "";
-      document.getElementById("quantidadeInput").value = "";
-    });
-
-    // ===============================
-    // 👁️ Atualizar em tempo real
-    // ===============================
-    onValue(ref(db, `salas/${salaAtual}/contagem`), snapshot => {
-      const dados = snapshot.val();
-      contagemProdutos = dados?.produtos || [];
-      valoresManuais = dados?.valores || {};
-      renderizarLista();
-      renderizarCamposManuais();
-      atualizarTotaisGerais();
-    });
-
-    // ===============================
-    // 🗑️ Editar / Remover
-    // ===============================
-    window.removerProduto = (index) => {
-      if (!confirm("Deseja remover este produto?")) return;
-      const produtos = [...contagemProdutos];
-      produtos.splice(index, 1);
-      set(ref(db, `salas/${salaAtual}/contagem/produtos`), produtos);
-    };
-
-    window.editarProduto = (index) => {
-      const novo = prompt("Nova quantidade:", contagemProdutos[index].pares);
-      if (!novo || novo <= 0) return;
-      contagemProdutos[index].pares = parseInt(novo);
-      contagemProdutos[index].valor = contagemProdutos[index].preco * contagemProdutos[index].pares;
-      set(ref(db, `salas/${salaAtual}/contagem/produtos`), contagemProdutos);
-    };
-
-    // ===============================
-    // 📋 Renderizar Lista
-    // ===============================
-    function renderizarLista() {
-      const lista = document.getElementById("listaProdutos");
-      lista.innerHTML = "";
-
-      let html = "";
-      let areaAnterior = "";
-      let somaFinalArea = 0;
-
-      contagemProdutos.forEach((item, index) => {
-        const novaArea = item.area !== areaAnterior;
-
-        if (novaArea && areaAnterior !== "") {
-          html += `<div style="padding:6px; text-align:right; font-weight:bold; color:#333;">
-                    ➡️ Total da Área ${areaAnterior}: ${somaFinalArea}
-                  </div>`;
-        }
-
-        if (novaArea) {
-          html += `<div style="margin-top:20px; background:#f8f9fa; padding:6px; border-left:4px solid #007bff;">
-                    <strong>${item.area}</strong>
-                  </div>`;
-          areaAnterior = item.area;
-          somaFinalArea = 0;
-        }
-
-        html += `<div style="display:flex; justify-content:space-between; border-bottom:1px dashed #ccc; padding:5px;">
-                  <div>${item.codigo} — ${item.pares} × ${item.preco} = <b>${item.valor}</b></div>
-                  <div>
-                    <button onclick="editarProduto(${index})">✏️</button>
-                    <button onclick="removerProduto(${index})">🗑️</button>
-                  </div>
-                </div>`;
-
-        somaFinalArea += item.pares + item.preco;
-      });
-
-      lista.innerHTML = html;
-    }
-
-    // ===============================
-    // 💰 Campos Manuais
-    // ===============================
-    function renderizarCamposManuais() {
-      const container = document.getElementById("inputsManuais");
-      container.innerHTML = "";
-      camposFixos.forEach(campo => {
-        const valor = valoresManuais[campo] || "";
-        const div = document.createElement("div");
-        div.innerHTML = `<label>${campo}</label>
-                         <input type="number" data-nome="${campo}" value="${valor}" oninput="salvarValorManual('${campo}', this.value)">`;
-        container.appendChild(div);
-      });
-      atualizarTotaisGerais();
-    }
-
-    window.salvarValorManual = (campo, valor) => {
-      valoresManuais[campo] = parseFloat(valor) || 0;
-      update(ref(db, `salas/${salaAtual}/contagem/valores`), valoresManuais);
-      atualizarTotaisGerais();
-    };
-
-    function atualizarTotaisGerais() {
-      let total = contagemProdutos.reduce((soma, item) => soma + item.valor, 0);
-      let fixo = valoresManuais["Fixo"] || 0;
-
-      for (const [chave, val] of Object.entries(valoresManuais)) {
-        if (chave.toLowerCase().includes("lucro")) total -= Math.abs(val);
-        else if (chave !== "Fixo") total += val;
+      if (!area || !codigo || isNaN(pares) || isNaN(preco)) {
+        alert("Preencha todos os campos corretamente!");
+        return;
       }
 
-      document.getElementById("valorTotal").textContent = total.toFixed(2);
-      document.getElementById("valorConclusao").textContent = (total - fixo).toFixed(2);
-    }
+      const valor = pares * preco;
+      const novoProduto = { area, codigo, pares, preco, valor };
+
+      const snapshot = await get(produtosRef);
+      const produtos = snapshot.exists() ? snapshot.val() : [];
+      produtos.push(novoProduto);
+      await set(produtosRef, produtos);
+
+      // Atualiza lista de áreas
+      const ordemSnap = await get(ordemAreasRef);
+      const ordemAreas = ordemSnap.exists() ? ordemSnap.val() : [];
+      if (!ordemAreas.includes(area)) {
+        ordemAreas.push(area);
+        await set(ordemAreasRef, ordemAreas);
+      }
+
+      // Limpa campos
+      areaInput.value = "";
+      codigoInput.value = "";
+      paresInput.value = "";
+      precoInput.value = "";
+    });
+
+    // ------------------------- SINCRONIZAÇÃO EM TEMPO REAL -------------------------
+    onValue(produtosRef, (snapshot) => {
+      tabela.innerHTML = "";
+      const produtos = snapshot.val();
+      if (produtos) {
+        produtos.forEach((p) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${p.area}</td>
+            <td>${p.codigo}</td>
+            <td>${p.pares}</td>
+            <td>${p.preco}</td>
+            <td>${p.valor}</td>
+          `;
+          tabela.appendChild(tr);
+        });
+      }
+    });
+
+    onValue(valoresRef, (snapshot) => {
+      valoresDiv.innerHTML = "";
+      const valores = snapshot.val();
+      if (valores) {
+        for (const [chave, valor] of Object.entries(valores)) {
+          const p = document.createElement("p");
+          p.textContent = `${chave}: ${valor}`;
+          valoresDiv.appendChild(p);
+        }
+      }
+    });
+
+    // ------------------------- SALVAR VALORES MANUAIS -------------------------
+    window.salvarValor = async (campo) => {
+      const valor = parseFloat(document.getElementById(campo).value) || 0;
+      await update(valoresRef, { [campo]: valor });
+    };
+
+    // ------------------------- EXPORTAR PARA EXCEL -------------------------
+    exportarBtn.addEventListener("click", async () => {
+      const snapshotProdutos = await get(produtosRef);
+      const snapshotValores = await get(valoresRef);
+
+      const produtos = snapshotProdutos.exists() ? snapshotProdutos.val() : [];
+      const valores = snapshotValores.exists() ? snapshotValores.val() : {};
+
+      const ws_data = [["Área", "Código", "Pares", "Preço", "Valor"]];
+      let total = 0;
+
+      produtos.forEach((p) => {
+        ws_data.push([p.area, p.codigo, p.pares, p.preco, p.valor]);
+        total += p.valor;
+      });
+
+      ws_data.push([]);
+      ws_data.push(["", "", "", "Total Produtos", total]);
+      ws_data.push([]);
+
+      // Adiciona valores manuais
+      ws_data.push(["Categoria", "Valor"]);
+      for (const [chave, valor] of Object.entries(valores)) {
+        ws_data.push([chave, valor]);
+      }
+
+      const ws = XLSX.utils.aoa_to_sheet(ws_data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Contagem");
+
+      XLSX.writeFile(wb, `Contagem_${salaId}.xlsx`);
+    });
   </script>
 
   <style>
-    body { font-family: 'Segoe UI'; background-color: #f3f4f6; padding: 15px; }
-    .container { max-width: 600px; margin:auto; background:#fff; padding:20px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1); }
-    input, button { font-size:1em; margin:5px 0; padding:10px; border-radius:6px; border:1px solid #ccc; width:100%; }
-    button { cursor:pointer; }
-    .btn-add { background:#28a745; color:white; border:none; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f7f9fb;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    h1 {
+      color: #2a6ebb;
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+    button {
+      background-color: #2a6ebb;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #1c4f8a;
+    }
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+    }
+    th {
+      background-color: #e9f0fb;
+    }
+    .valores {
+      margin-top: 20px;
+      background: #eef5ff;
+      border-radius: 10px;
+      padding: 10px;
+      display: inline-block;
+      text-align: left;
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>📦 CONTAGEM ZIZA (Sincronizado)</h2>
+  <h1>CONTAGEM ZIZA - Modo Sincronizado</h1>
 
-    <label>Carregar base (Excel)</label>
-    <input type="file" id="arquivoExcel" accept=".xlsx" />
-    <div id="statusMensagem"></div>
+  <div>
+    <input type="text" id="area" placeholder="Área (ex: PRATELEIRA_1)">
+    <input type="text" id="codigo" placeholder="Código do Produto">
+    <input type="number" id="pares" placeholder="Pares">
+    <input type="number" id="preco" placeholder="Preço">
+    <button id="adicionar">Adicionar Produto</button>
+    <button id="exportarExcel">📊 Exportar Excel</button>
+  </div>
 
-    <div id="formulario" style="display:none;">
-      <input type="text" id="areaInput" placeholder="Área (Ex: Prateleira 1)" />
-      <input type="text" id="codigoInput" placeholder="Código do produto" />
-      <input type="number" id="quantidadeInput" placeholder="Quantidade (pares)" />
-      <button class="btn-add">Adicionar</button>
+  <table>
+    <thead>
+      <tr>
+        <th>Área</th>
+        <th>Código</th>
+        <th>Pares</th>
+        <th>Preço</th>
+        <th>Valor</th>
+      </tr>
+    </thead>
+    <tbody id="tabela"></tbody>
+  </table>
 
-      <div id="listaProdutos"></div>
-
-      <h3>📊 Valores Manuais</h3>
-      <div id="inputsManuais"></div>
-
-      <div style="margin-top:10px; text-align:center; font-weight:bold;">
-        TOTAL: <span id="valorTotal">0</span> | CONCLUSÃO: <span id="valorConclusao">0</span>
-      </div>
-    </div>
+  <div class="valores" id="valores">
+    <h3>Valores Manuais</h3>
+    <p>Caixa: <input id="Caixa" type="number" onblur="salvarValor('Caixa')"></p>
+    <p>Saldo: <input id="Saldo" type="number" onblur="salvarValor('Saldo')"></p>
+    <p>Pagamento: <input id="Pagamento" type="number" onblur="salvarValor('Pagamento')"></p>
+    <p>Inventario: <input id="Inventario" type="number" onblur="salvarValor('Inventario')"></p>
+    <p>Lucro: <input id="Lucro" type="number" onblur="salvarValor('Lucro')"></p>
   </div>
 </body>
 </html>
