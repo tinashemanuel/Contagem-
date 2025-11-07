@@ -5,14 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>CONTAGEM ZIZA - Modo Sincronizado</title>
 
+  <!-- Biblioteca XLSX -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
     import { 
-      getDatabase, ref, push, update, onValue, get, set 
+      getDatabase, ref, push, update, onValue, get 
     } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
 
+    // --- Configuração Firebase ---
     const firebaseConfig = {
       apiKey: "AIzaSyAhIcEttYA_zNawM-TgBX20pJ2rFnZ4UQM",
       authDomain: "contagem-2f002.firebaseapp.com",
@@ -25,152 +27,149 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    const salaId = "SALA123";
+    const salaId = "SALA123"; // pode ser dinâmica se quiser
 
     const produtosRef = ref(db, `salas/${salaId}/contagem/produtos`);
     const valoresRef = ref(db, `salas/${salaId}/contagem/valores`);
-    const ordemAreasRef = ref(db, `salas/${salaId}/contagem/ordemAreas`);
 
-    const areaInput = document.getElementById("area");
-    const codigoInput = document.getElementById("codigo");
-    const paresInput = document.getElementById("pares");
-    const precoInput = document.getElementById("preco");
-    const adicionarBtn = document.getElementById("adicionar");
-    const tabela = document.getElementById("tabela");
-    const exportarBtn = document.getElementById("exportarExcel");
-    const totalDiv = document.getElementById("totalGeral");
+    document.addEventListener("DOMContentLoaded", () => {
+      // --- Elementos DOM ---
+      const areaInput = document.getElementById("area");
+      const codigoInput = document.getElementById("codigo");
+      const paresInput = document.getElementById("pares");
+      const precoInput = document.getElementById("preco");
+      const adicionarBtn = document.getElementById("adicionar");
+      const tabela = document.getElementById("tabela");
+      const exportarBtn = document.getElementById("exportarExcel");
 
-    let valoresManuais = {}; // Armazena valores manuais localmente
+      const camposManuais = ["Caixa","Saldo","Pagamento","Inventario","Lucro"];
 
-    // Adicionar produto
-    adicionarBtn.addEventListener("click", async () => {
-      const area = areaInput.value.trim();
-      const codigo = codigoInput.value.trim();
-      const pares = parseInt(paresInput.value);
-      const preco = parseFloat(precoInput.value);
+      // --- Adicionar produto ---
+      adicionarBtn.addEventListener("click", async () => {
+        const area = areaInput.value.trim();
+        const codigo = codigoInput.value.trim();
+        const pares = parseInt(paresInput.value);
+        const preco = parseFloat(precoInput.value);
 
-      if (!area || !codigo || isNaN(pares) || isNaN(preco)) {
-        alert("⚠️ Preencha todos os campos corretamente!");
-        return;
-      }
+        if (!area || !codigo || isNaN(pares) || isNaN(preco)) {
+          alert("⚠️ Preencha todos os campos corretamente!");
+          return;
+        }
 
-      const valor = pares * preco;
-      await push(produtosRef, { area, codigo, pares, preco, valor });
+        const valor = pares * preco;
+        await push(produtosRef, { area, codigo, pares, preco, valor });
 
-      // Atualizar lista de áreas
-      const snapAreas = await get(ordemAreasRef);
-      const areas = snapAreas.exists() ? snapAreas.val() : [];
-      if (!areas.includes(area)) areas.push(area);
-      await set(ordemAreasRef, areas);
-
-      // Limpar campos
-      areaInput.value = "";
-      codigoInput.value = "";
-      paresInput.value = "";
-      precoInput.value = "";
-    });
-
-    // Atualizar tabela e total em tempo real
-    onValue(produtosRef, (snapshot) => {
-      const produtos = snapshot.val() || {};
-      renderTabela(produtos);
-      calcularTotal(produtos, valoresManuais);
-    });
-
-    // Atualizar valores manuais
-    onValue(valoresRef, (snapshot) => {
-      valoresManuais = snapshot.val() || {};
-      for (const [chave, valor] of Object.entries(valoresManuais)) {
-        const input = document.getElementById(chave);
-        if (input) input.value = valor;
-      }
-      get(produtosRef).then(snap => calcularTotal(snap.val() || {}, valoresManuais));
-    });
-
-    // Salvar valor manual
-    window.salvarValor = async (campo) => {
-      const valor = parseFloat(document.getElementById(campo).value) || 0;
-      valoresManuais[campo] = valor;
-      await update(valoresRef, { [campo]: valor });
-
-      get(produtosRef).then(snap => calcularTotal(snap.val() || {}, valoresManuais));
-    };
-
-    // Renderizar tabela
-    function renderTabela(produtos) {
-      tabela.innerHTML = "";
-      Object.values(produtos).forEach(p => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${p.area}</td>
-          <td>${p.codigo}</td>
-          <td>${p.pares}</td>
-          <td>${p.preco}</td>
-          <td>${p.valor}</td>
-        `;
-        tabela.appendChild(tr);
-      });
-    }
-
-    // Calcular total e conclusão
-    function calcularTotal(produtos, valores) {
-      let totalProdutos = Object.values(produtos).reduce((sum, p) => sum + p.valor, 0);
-      let totalManuais = 0;
-      let fixo = valores["Fixo"] || 0;
-
-      for (const [chave, valor] of Object.entries(valores)) {
-        if (chave !== "Fixo") totalManuais += parseFloat(valor) || 0;
-      }
-
-      const totalGeral = totalProdutos + totalManuais;
-      const conclusao = totalGeral - fixo;
-
-      totalDiv.innerHTML = `
-        TOTAL PRODUTOS + VALORES MANUAIS: ${totalGeral.toFixed(2)}<br>
-        CONCLUSÃO (TOTAL - Fixo): ${conclusao.toFixed(2)}
-      `;
-    }
-
-    // Exportar Excel
-    exportarBtn.addEventListener("click", async () => {
-      const snapProdutos = await get(produtosRef);
-      const produtos = snapProdutos.exists() ? snapProdutos.val() : {};
-      const snapValores = await get(valoresRef);
-      const valores = snapValores.exists() ? snapValores.val() : {};
-
-      const ws_data = [["Área","Código","Pares","Preço","Valor"]];
-      let total = 0;
-      Object.values(produtos).forEach(p => {
-        ws_data.push([p.area, p.codigo, p.pares, p.preco, p.valor]);
-        total += p.valor;
+        areaInput.value = "";
+        codigoInput.value = "";
+        paresInput.value = "";
+        precoInput.value = "";
+        areaInput.focus();
       });
 
-      ws_data.push([]);
-      ws_data.push(["", "", "", "TOTAL PRODUTOS", total]);
-      ws_data.push([]);
-      ws_data.push(["Categoria","Valor"]);
-      for (const [chave, valor] of Object.entries(valores)) ws_data.push([chave, valor]);
-      ws_data.push([]);
-      ws_data.push(["CONCLUSÃO", total + Object.values(valores).reduce((s,v)=>s+v,0) - (valores["Fixo"]||0)]);
+      // --- Atualização em tempo real da tabela ---
+      onValue(produtosRef, (snapshot) => {
+        tabela.innerHTML = "";
+        const produtos = snapshot.val();
+        let totalProdutos = 0;
 
-      const ws = XLSX.utils.aoa_to_sheet(ws_data);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Contagem");
-      XLSX.writeFile(wb, `Contagem_${salaId}.xlsx`);
+        if (produtos) {
+          Object.values(produtos).forEach((p) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${p.area}</td>
+              <td>${p.codigo}</td>
+              <td>${p.pares}</td>
+              <td>${p.preco}</td>
+              <td>${p.valor}</td>
+            `;
+            tabela.appendChild(tr);
+            totalProdutos += p.valor;
+          });
+        }
+
+        atualizarTotais(totalProdutos);
+      });
+
+      // --- Valores manuais ---
+      camposManuais.forEach(campo => {
+        const input = document.getElementById(campo);
+        input.addEventListener("blur", async () => {
+          const valor = parseFloat(input.value) || 0;
+          await update(valoresRef, { [campo]: valor });
+        });
+      });
+
+      // --- Atualização em tempo real valores manuais ---
+      onValue(valoresRef, (snapshot) => {
+        const valores = snapshot.val() || {};
+        camposManuais.forEach(campo => {
+          const input = document.getElementById(campo);
+          input.value = valores[campo] ?? "";
+        });
+        calcularConclusao();
+      });
+
+      // --- Exportar Excel ---
+      exportarBtn.addEventListener("click", async () => {
+        const produtosSnap = await get(produtosRef);
+        const valoresSnap = await get(valoresRef);
+        const produtos = produtosSnap.exists() ? produtosSnap.val() : {};
+        const valores = valoresSnap.exists() ? valoresSnap.val() : {};
+
+        const ws_data = [["Área","Código","Pares","Preço","Valor"]];
+        let totalProdutos = 0;
+
+        Object.values(produtos).forEach(p => {
+          ws_data.push([p.area,p.codigo,p.pares,p.preco,p.valor]);
+          totalProdutos += p.valor;
+        });
+
+        ws_data.push([]);
+        ws_data.push(["", "", "", "Total Produtos", totalProdutos]);
+        ws_data.push([]);
+        ws_data.push(["Categoria","Valor"]);
+        camposManuais.forEach(c => {
+          ws_data.push([c, valores[c] || 0]);
+        });
+
+        const conclusao = totalProdutos + camposManuais.reduce((s, c) => s + (valores[c] || 0),0);
+        ws_data.push([]);
+        ws_data.push(["CONCLUSÃO", conclusao]);
+
+        const ws = XLSX.utils.aoa_to_sheet(ws_data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Contagem");
+        XLSX.writeFile(wb, `Contagem_${salaId}.xlsx`);
+      });
+
+      // --- Atualizar totais ---
+      function atualizarTotais(totalProdutos) {
+        camposManuais.forEach(campo => {
+          const valor = parseFloat(document.getElementById(campo).value) || 0;
+          totalProdutos += valor;
+        });
+        document.getElementById("totalGeral").textContent = totalProdutos.toFixed(2);
+      }
+
+      function calcularConclusao() {
+        const produtosSnap = tabela.querySelectorAll("tr td:nth-child(5)");
+        let totalProdutos = 0;
+        produtosSnap.forEach(td => totalProdutos += parseFloat(td.textContent));
+        atualizarTotais(totalProdutos);
+      }
     });
   </script>
 
   <style>
-    body { font-family:'Segoe UI',sans-serif; background:#f7f9fb; padding:20px; text-align:center; }
-    h1 { color:#2a6ebb; }
+    body { font-family: 'Segoe UI', sans-serif; background:#f7f9fb; margin:0; padding:20px; text-align:center; }
+    h1 { color: #2a6ebb; }
     input, button { padding:10px; margin:5px; border-radius:8px; border:1px solid #ccc; font-size:16px; }
-    button { background:#2a6ebb; color:white; cursor:pointer; }
-    button:hover { background:#1c4f8a; }
+    button { background-color:#2a6ebb; color:white; cursor:pointer; }
+    button:hover { background-color:#1c4f8a; }
     table { width:100%; margin-top:20px; border-collapse:collapse; }
     th, td { border:1px solid #ccc; padding:8px; }
-    th { background:#e9f0fb; }
+    th { background-color:#e9f0fb; }
     .valores { margin-top:20px; background:#eef5ff; border-radius:10px; padding:10px; display:inline-block; text-align:left; }
-    #totalGeral { margin-top:20px; font-weight:bold; font-size:16px; }
   </style>
 </head>
 <body>
@@ -181,7 +180,7 @@
     <input type="text" id="codigo" placeholder="Código do Produto">
     <input type="number" id="pares" placeholder="Pares">
     <input type="number" id="preco" placeholder="Preço">
-    <button id="adicionar">Adicionar Produto</button>
+    <button id="adicionar">➕ Adicionar Produto</button>
     <button id="exportarExcel">📊 Exportar Excel</button>
   </div>
 
@@ -198,16 +197,14 @@
     <tbody id="tabela"></tbody>
   </table>
 
-  <div class="valores" id="valores">
+  <div class="valores">
     <h3>Valores Manuais</h3>
-    <p>Caixa: <input id="Caixa" type="number" onblur="salvarValor('Caixa')"></p>
-    <p>Saldo: <input id="Saldo" type="number" onblur="salvarValor('Saldo')"></p>
-    <p>Pagamento: <input id="Pagamento" type="number" onblur="salvarValor('Pagamento')"></p>
-    <p>Inventario: <input id="Inventario" type="number" onblur="salvarValor('Inventario')"></p>
-    <p>Lucro: <input id="Lucro" type="number" onblur="salvarValor('Lucro')"></p>
-    <p>Fixo: <input id="Fixo" type="number" onblur="salvarValor('Fixo')"></p>
+    <p>Caixa: <input id="Caixa" type="number"></p>
+    <p>Saldo: <input id="Saldo" type="number"></p>
+    <p>Pagamento: <input id="Pagamento" type="number"></p>
+    <p>Inventario: <input id="Inventario" type="number"></p>
+    <p>Lucro: <input id="Lucro" type="number"></p>
+    <p><strong>Total Geral: <span id="totalGeral">0</span></strong></p>
   </div>
-
-  <div id="totalGeral"></div>
 </body>
 </html>
