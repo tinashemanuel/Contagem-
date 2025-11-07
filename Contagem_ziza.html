@@ -5,16 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>CONTAGEM ZIZA - Modo Sincronizado</title>
 
-  <!-- Biblioteca XLSX -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
     import { 
-      getDatabase, ref, push, update, remove, onValue, get 
+      getDatabase, ref, push, update, onValue, get, set 
     } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
 
-    // --- Configuração Firebase ---
     const firebaseConfig = {
       apiKey: "AIzaSyAhIcEttYA_zNawM-TgBX20pJ2rFnZ4UQM",
       authDomain: "contagem-2f002.firebaseapp.com",
@@ -33,17 +31,18 @@
     const valoresRef = ref(db, `salas/${salaId}/contagem/valores`);
     const ordemAreasRef = ref(db, `salas/${salaId}/contagem/ordemAreas`);
 
-    // --- Elementos DOM ---
     const areaInput = document.getElementById("area");
     const codigoInput = document.getElementById("codigo");
     const paresInput = document.getElementById("pares");
     const precoInput = document.getElementById("preco");
     const adicionarBtn = document.getElementById("adicionar");
     const tabela = document.getElementById("tabela");
-    const valoresDiv = document.getElementById("valores");
     const exportarBtn = document.getElementById("exportarExcel");
+    const totalDiv = document.getElementById("totalGeral");
 
-    // --- Adicionar produto ---
+    let valoresManuais = {}; // Armazena valores manuais localmente
+
+    // Adicionar produto
     adicionarBtn.addEventListener("click", async () => {
       const area = areaInput.value.trim();
       const codigo = codigoInput.value.trim();
@@ -56,87 +55,103 @@
       }
 
       const valor = pares * preco;
-      const novoProduto = { area, codigo, pares, preco, valor };
+      await push(produtosRef, { area, codigo, pares, preco, valor });
 
-      // 👉 push() adiciona um item à lista sem apagar os anteriores
-      await push(produtosRef, novoProduto);
-
-      // Atualiza lista de áreas
+      // Atualizar lista de áreas
       const snapAreas = await get(ordemAreasRef);
       const areas = snapAreas.exists() ? snapAreas.val() : [];
-      if (!areas.includes(area)) {
-        areas.push(area);
-        await update(ordemAreasRef, areas);
-      }
+      if (!areas.includes(area)) areas.push(area);
+      await set(ordemAreasRef, areas);
 
-      // Limpa campos
+      // Limpar campos
       areaInput.value = "";
       codigoInput.value = "";
       paresInput.value = "";
       precoInput.value = "";
     });
 
-    // --- Atualização em tempo real ---
+    // Atualizar tabela e total em tempo real
     onValue(produtosRef, (snapshot) => {
-      tabela.innerHTML = "";
-      const produtos = snapshot.val();
-      if (produtos) {
-        Object.values(produtos).forEach((p) => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${p.area}</td>
-            <td>${p.codigo}</td>
-            <td>${p.pares}</td>
-            <td>${p.preco}</td>
-            <td>${p.valor}</td>
-          `;
-          tabela.appendChild(tr);
-        });
-      }
+      const produtos = snapshot.val() || {};
+      renderTabela(produtos);
+      calcularTotal(produtos, valoresManuais);
     });
 
-    // --- Sincronização dos valores manuais ---
+    // Atualizar valores manuais
     onValue(valoresRef, (snapshot) => {
-      valoresDiv.innerHTML = "";
-      const valores = snapshot.val();
-      if (valores) {
-        for (const [chave, valor] of Object.entries(valores)) {
-          const p = document.createElement("p");
-          p.textContent = `${chave}: ${valor}`;
-          valoresDiv.appendChild(p);
-        }
+      valoresManuais = snapshot.val() || {};
+      for (const [chave, valor] of Object.entries(valoresManuais)) {
+        const input = document.getElementById(chave);
+        if (input) input.value = valor;
       }
+      get(produtosRef).then(snap => calcularTotal(snap.val() || {}, valoresManuais));
     });
 
-    // --- Atualizar valores manuais ---
+    // Salvar valor manual
     window.salvarValor = async (campo) => {
       const valor = parseFloat(document.getElementById(campo).value) || 0;
+      valoresManuais[campo] = valor;
       await update(valoresRef, { [campo]: valor });
+
+      get(produtosRef).then(snap => calcularTotal(snap.val() || {}, valoresManuais));
     };
 
-    // --- Exportar para Excel ---
+    // Renderizar tabela
+    function renderTabela(produtos) {
+      tabela.innerHTML = "";
+      Object.values(produtos).forEach(p => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${p.area}</td>
+          <td>${p.codigo}</td>
+          <td>${p.pares}</td>
+          <td>${p.preco}</td>
+          <td>${p.valor}</td>
+        `;
+        tabela.appendChild(tr);
+      });
+    }
+
+    // Calcular total e conclusão
+    function calcularTotal(produtos, valores) {
+      let totalProdutos = Object.values(produtos).reduce((sum, p) => sum + p.valor, 0);
+      let totalManuais = 0;
+      let fixo = valores["Fixo"] || 0;
+
+      for (const [chave, valor] of Object.entries(valores)) {
+        if (chave !== "Fixo") totalManuais += parseFloat(valor) || 0;
+      }
+
+      const totalGeral = totalProdutos + totalManuais;
+      const conclusao = totalGeral - fixo;
+
+      totalDiv.innerHTML = `
+        TOTAL PRODUTOS + VALORES MANUAIS: ${totalGeral.toFixed(2)}<br>
+        CONCLUSÃO (TOTAL - Fixo): ${conclusao.toFixed(2)}
+      `;
+    }
+
+    // Exportar Excel
     exportarBtn.addEventListener("click", async () => {
       const snapProdutos = await get(produtosRef);
-      const snapValores = await get(valoresRef);
       const produtos = snapProdutos.exists() ? snapProdutos.val() : {};
+      const snapValores = await get(valoresRef);
       const valores = snapValores.exists() ? snapValores.val() : {};
 
-      const ws_data = [["Área", "Código", "Pares", "Preço", "Valor"]];
+      const ws_data = [["Área","Código","Pares","Preço","Valor"]];
       let total = 0;
-
-      Object.values(produtos).forEach((p) => {
+      Object.values(produtos).forEach(p => {
         ws_data.push([p.area, p.codigo, p.pares, p.preco, p.valor]);
         total += p.valor;
       });
 
       ws_data.push([]);
-      ws_data.push(["", "", "", "Total Produtos", total]);
+      ws_data.push(["", "", "", "TOTAL PRODUTOS", total]);
       ws_data.push([]);
-      ws_data.push(["Categoria", "Valor"]);
-
-      for (const [chave, valor] of Object.entries(valores)) {
-        ws_data.push([chave, valor]);
-      }
+      ws_data.push(["Categoria","Valor"]);
+      for (const [chave, valor] of Object.entries(valores)) ws_data.push([chave, valor]);
+      ws_data.push([]);
+      ws_data.push(["CONCLUSÃO", total + Object.values(valores).reduce((s,v)=>s+v,0) - (valores["Fixo"]||0)]);
 
       const ws = XLSX.utils.aoa_to_sheet(ws_data);
       const wb = XLSX.utils.book_new();
@@ -146,45 +161,16 @@
   </script>
 
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #f7f9fb;
-      margin: 0;
-      padding: 20px;
-      text-align: center;
-    }
-    h1 { color: #2a6ebb; }
-    input, button {
-      padding: 10px;
-      margin: 5px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 16px;
-    }
-    button {
-      background-color: #2a6ebb;
-      color: white;
-      cursor: pointer;
-    }
-    button:hover { background-color: #1c4f8a; }
-    table {
-      width: 100%;
-      margin-top: 20px;
-      border-collapse: collapse;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-    }
-    th { background-color: #e9f0fb; }
-    .valores {
-      margin-top: 20px;
-      background: #eef5ff;
-      border-radius: 10px;
-      padding: 10px;
-      display: inline-block;
-      text-align: left;
-    }
+    body { font-family:'Segoe UI',sans-serif; background:#f7f9fb; padding:20px; text-align:center; }
+    h1 { color:#2a6ebb; }
+    input, button { padding:10px; margin:5px; border-radius:8px; border:1px solid #ccc; font-size:16px; }
+    button { background:#2a6ebb; color:white; cursor:pointer; }
+    button:hover { background:#1c4f8a; }
+    table { width:100%; margin-top:20px; border-collapse:collapse; }
+    th, td { border:1px solid #ccc; padding:8px; }
+    th { background:#e9f0fb; }
+    .valores { margin-top:20px; background:#eef5ff; border-radius:10px; padding:10px; display:inline-block; text-align:left; }
+    #totalGeral { margin-top:20px; font-weight:bold; font-size:16px; }
   </style>
 </head>
 <body>
@@ -219,6 +205,9 @@
     <p>Pagamento: <input id="Pagamento" type="number" onblur="salvarValor('Pagamento')"></p>
     <p>Inventario: <input id="Inventario" type="number" onblur="salvarValor('Inventario')"></p>
     <p>Lucro: <input id="Lucro" type="number" onblur="salvarValor('Lucro')"></p>
+    <p>Fixo: <input id="Fixo" type="number" onblur="salvarValor('Fixo')"></p>
   </div>
+
+  <div id="totalGeral"></div>
 </body>
 </html>
