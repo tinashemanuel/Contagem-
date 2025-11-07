@@ -9,10 +9,12 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <script type="module">
-    // ------------------------- FIREBASE -------------------------
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
-    import { getDatabase, ref, set, update, get, onValue } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
+    import { 
+      getDatabase, ref, push, update, remove, onValue, get 
+    } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
 
+    // --- Configuração Firebase ---
     const firebaseConfig = {
       apiKey: "AIzaSyAhIcEttYA_zNawM-TgBX20pJ2rFnZ4UQM",
       authDomain: "contagem-2f002.firebaseapp.com",
@@ -25,13 +27,13 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    const salaId = "SALA123"; // sala fixa por enquanto
+    const salaId = "SALA123";
 
     const produtosRef = ref(db, `salas/${salaId}/contagem/produtos`);
     const valoresRef = ref(db, `salas/${salaId}/contagem/valores`);
     const ordemAreasRef = ref(db, `salas/${salaId}/contagem/ordemAreas`);
 
-    // ------------------------- DOM ELEMENTS -------------------------
+    // --- Elementos DOM ---
     const areaInput = document.getElementById("area");
     const codigoInput = document.getElementById("codigo");
     const paresInput = document.getElementById("pares");
@@ -41,7 +43,7 @@
     const valoresDiv = document.getElementById("valores");
     const exportarBtn = document.getElementById("exportarExcel");
 
-    // ------------------------- ADICIONAR PRODUTO -------------------------
+    // --- Adicionar produto ---
     adicionarBtn.addEventListener("click", async () => {
       const area = areaInput.value.trim();
       const codigo = codigoInput.value.trim();
@@ -49,24 +51,22 @@
       const preco = parseFloat(precoInput.value);
 
       if (!area || !codigo || isNaN(pares) || isNaN(preco)) {
-        alert("Preencha todos os campos corretamente!");
+        alert("⚠️ Preencha todos os campos corretamente!");
         return;
       }
 
       const valor = pares * preco;
       const novoProduto = { area, codigo, pares, preco, valor };
 
-      const snapshot = await get(produtosRef);
-      const produtos = snapshot.exists() ? snapshot.val() : [];
-      produtos.push(novoProduto);
-      await set(produtosRef, produtos);
+      // 👉 push() adiciona um item à lista sem apagar os anteriores
+      await push(produtosRef, novoProduto);
 
       // Atualiza lista de áreas
-      const ordemSnap = await get(ordemAreasRef);
-      const ordemAreas = ordemSnap.exists() ? ordemSnap.val() : [];
-      if (!ordemAreas.includes(area)) {
-        ordemAreas.push(area);
-        await set(ordemAreasRef, ordemAreas);
+      const snapAreas = await get(ordemAreasRef);
+      const areas = snapAreas.exists() ? snapAreas.val() : [];
+      if (!areas.includes(area)) {
+        areas.push(area);
+        await update(ordemAreasRef, areas);
       }
 
       // Limpa campos
@@ -76,12 +76,12 @@
       precoInput.value = "";
     });
 
-    // ------------------------- SINCRONIZAÇÃO EM TEMPO REAL -------------------------
+    // --- Atualização em tempo real ---
     onValue(produtosRef, (snapshot) => {
       tabela.innerHTML = "";
       const produtos = snapshot.val();
       if (produtos) {
-        produtos.forEach((p) => {
+        Object.values(produtos).forEach((p) => {
           const tr = document.createElement("tr");
           tr.innerHTML = `
             <td>${p.area}</td>
@@ -95,6 +95,7 @@
       }
     });
 
+    // --- Sincronização dos valores manuais ---
     onValue(valoresRef, (snapshot) => {
       valoresDiv.innerHTML = "";
       const valores = snapshot.val();
@@ -107,24 +108,23 @@
       }
     });
 
-    // ------------------------- SALVAR VALORES MANUAIS -------------------------
+    // --- Atualizar valores manuais ---
     window.salvarValor = async (campo) => {
       const valor = parseFloat(document.getElementById(campo).value) || 0;
       await update(valoresRef, { [campo]: valor });
     };
 
-    // ------------------------- EXPORTAR PARA EXCEL -------------------------
+    // --- Exportar para Excel ---
     exportarBtn.addEventListener("click", async () => {
-      const snapshotProdutos = await get(produtosRef);
-      const snapshotValores = await get(valoresRef);
-
-      const produtos = snapshotProdutos.exists() ? snapshotProdutos.val() : [];
-      const valores = snapshotValores.exists() ? snapshotValores.val() : {};
+      const snapProdutos = await get(produtosRef);
+      const snapValores = await get(valoresRef);
+      const produtos = snapProdutos.exists() ? snapProdutos.val() : {};
+      const valores = snapValores.exists() ? snapValores.val() : {};
 
       const ws_data = [["Área", "Código", "Pares", "Preço", "Valor"]];
       let total = 0;
 
-      produtos.forEach((p) => {
+      Object.values(produtos).forEach((p) => {
         ws_data.push([p.area, p.codigo, p.pares, p.preco, p.valor]);
         total += p.valor;
       });
@@ -132,9 +132,8 @@
       ws_data.push([]);
       ws_data.push(["", "", "", "Total Produtos", total]);
       ws_data.push([]);
-
-      // Adiciona valores manuais
       ws_data.push(["Categoria", "Valor"]);
+
       for (const [chave, valor] of Object.entries(valores)) {
         ws_data.push([chave, valor]);
       }
@@ -142,7 +141,6 @@
       const ws = XLSX.utils.aoa_to_sheet(ws_data);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Contagem");
-
       XLSX.writeFile(wb, `Contagem_${salaId}.xlsx`);
     });
   </script>
@@ -155,9 +153,7 @@
       padding: 20px;
       text-align: center;
     }
-    h1 {
-      color: #2a6ebb;
-    }
+    h1 { color: #2a6ebb; }
     input, button {
       padding: 10px;
       margin: 5px;
@@ -170,9 +166,7 @@
       color: white;
       cursor: pointer;
     }
-    button:hover {
-      background-color: #1c4f8a;
-    }
+    button:hover { background-color: #1c4f8a; }
     table {
       width: 100%;
       margin-top: 20px;
@@ -182,9 +176,7 @@
       border: 1px solid #ccc;
       padding: 8px;
     }
-    th {
-      background-color: #e9f0fb;
-    }
+    th { background-color: #e9f0fb; }
     .valores {
       margin-top: 20px;
       background: #eef5ff;
