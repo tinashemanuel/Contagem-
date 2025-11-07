@@ -28,7 +28,7 @@
     const produtosRef = ref(db, `salas/${salaId}/contagem/produtos`);
     const valoresRef = ref(db, `salas/${salaId}/contagem/valores`);
 
-    const camposManuais = ["Caixa","Saldo","Pagamento","Inventario","Lucro"];
+    const camposManuais = ["Caixa","Saldo","Pagamento","Inventario","Devolucao","Lucro","Lucro_dia_2","Fixo"];
 
     // --- Adicionar Produto ---
     window.adicionarProduto = async () => {
@@ -43,7 +43,16 @@
       }
 
       const valor = pares * preco;
-      await push(produtosRef, { area, codigo, pares, preco, valor });
+
+      try {
+        // push cria chave única automaticamente
+        await push(produtosRef, { area, codigo, pares, preco, valor });
+        console.log("Produto adicionado com sucesso!");
+      } catch (e) {
+        console.error("Erro ao adicionar produto:", e);
+        alert("Erro ao adicionar produto. Veja o console.");
+        return;
+      }
 
       // Limpar inputs
       document.getElementById("area").value = "";
@@ -73,26 +82,29 @@
     // --- Valores manuais ---
     camposManuais.forEach(campo => {
       const input = document.getElementById(campo);
-      input.addEventListener("blur", async () => {
-        const valor = parseFloat(input.value) || 0;
-        await update(valoresRef, { [campo]: valor });
-        atualizarTotais();
-      });
+      if (input) {
+        input.addEventListener("blur", async () => {
+          const valor = parseFloat(input.value) || 0;
+          await update(valoresRef, { [campo]: valor });
+          atualizarTotais();
+        });
+      }
     });
 
     onValue(valoresRef, snapshot => {
       const valores = snapshot.val() || {};
       camposManuais.forEach(campo => {
         const input = document.getElementById(campo);
-        input.value = valores[campo] ?? "";
+        if (input) input.value = valores[campo] ?? "";
       });
       atualizarTotais();
     });
 
+    // --- Atualizar totais ---
     function atualizarTotais(totalProdutos=0){
       camposManuais.forEach(campo => {
-        const val = parseFloat(document.getElementById(campo).value) || 0;
-        totalProdutos += val;
+        const input = document.getElementById(campo);
+        if (input) totalProdutos += parseFloat(input.value) || 0;
       });
       document.getElementById("totalGeral").textContent = totalProdutos.toFixed(2);
     }
@@ -162,7 +174,10 @@
     <p>Saldo: <input id="Saldo" type="number"></p>
     <p>Pagamento: <input id="Pagamento" type="number"></p>
     <p>Inventario: <input id="Inventario" type="number"></p>
+    <p>Devolucao: <input id="Devolucao" type="number"></p>
     <p>Lucro: <input id="Lucro" type="number"></p>
+    <p>Lucro_dia_2: <input id="Lucro_dia_2" type="number"></p>
+    <p>Fixo: <input id="Fixo" type="number"></p>
     <p><strong>Total Geral: <span id="totalGeral">0</span></strong></p>
   </div>
 </body>
