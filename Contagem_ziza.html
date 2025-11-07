@@ -36,8 +36,8 @@
       <input type="text" id="areaInput" placeholder="Área (Ex: Prateleira 1)" class="input" />
       <input type="text" id="codigoInput" placeholder="Código do produto" class="input" />
       <input type="number" id="quantidadeInput" placeholder="Quantidade (pares)" class="input" />
-      <button onclick="adicionarProduto()" class="btn btn-add">➕ Adicionar</button>
-      <button onclick="exportarParaExcel()" class="btn btn-export">📤 Exportar Contagem</button>
+      <button id="btnAdicionar" class="btn btn-add">➕ Adicionar</button>
+      <button id="btnExportar" class="btn btn-export">📤 Exportar Contagem</button>
 
       <div id="listaProdutos" style="margin-top:20px;"></div>
 
@@ -53,7 +53,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-    import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
+    import { getDatabase, ref, set, push, onValue } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
 
     // Config Firebase
     const firebaseConfig = {
@@ -81,9 +81,10 @@
 
     const produtosRef = ref(db, `salas/${salaCodigo}/contagem/produtos`);
 
-    // Função para escutar mudanças em tempo real
-    onValue(produtosRef, (snapshot)=>{
-      contagemProdutos = snapshot.exists() ? snapshot.val() : [];
+    // Escuta em tempo real
+    onValue(produtosRef, snapshot=>{
+      const data = snapshot.exists() ? snapshot.val() : {};
+      contagemProdutos = Object.keys(data).map(key => ({ id: key, ...data[key] }));
       renderizarLista();
       atualizarTotaisGerais();
     });
@@ -100,51 +101,65 @@
         const planilha = XLSX.utils.sheet_to_json(workbook.Sheets[primeira]);
 
         const status = document.getElementById("statusMensagem");
-        if(planilha.length===0){ status.textContent="⚠️ Planilha vazia"; status.className="erro"; return; }
+        if(planilha.length===0){ status.textContent="⚠️ Planilha vazia"; return; }
 
         const colunas = Object.keys(planilha[0]);
         const nomeCodigo = colunas.find(c=>c.includes('码')||c.toLowerCase().includes('código'));
         const nomePreco = colunas.find(c=>c.includes('价')||c.toLowerCase().includes('preço'));
 
-        if(!nomeCodigo||!nomePreco){ status.textContent="⚠️ Colunas código/preço não encontradas"; status.className="erro"; return; }
+        if(!nomeCodigo||!nomePreco){ status.textContent="⚠️ Colunas código/preço não encontradas"; return; }
 
         basePrecos = {};
         planilha.forEach(row=>{ if(row[nomeCodigo] && row[nomePreco]) basePrecos[String(row[nomeCodigo]).trim().toUpperCase()] = parseFloat(row[nomePreco]); });
 
-        if(Object.keys(basePrecos).length===0){ status.textContent="⚠️ Nenhum código/preço válido"; status.className="erro"; return; }
+        if(Object.keys(basePrecos).length===0){ status.textContent="⚠️ Nenhum código/preço válido"; return; }
 
-        status.textContent="✅ Base carregada com sucesso"; status.className="sucesso";
+        status.textContent="✅ Base carregada com sucesso";
         document.getElementById("formulario").style.display="block";
         renderizarCamposManuais();
       };
       reader.readAsArrayBuffer(file);
     });
 
+    // Funções produtos
     async function adicionarProduto(){
       const area = document.getElementById("areaInput").value.trim().toUpperCase();
       const codigo = document.getElementById("codigoInput").value.trim().toUpperCase();
       const quantidade = parseInt(document.getElementById("quantidadeInput").value.trim());
       const preco = basePrecos[codigo];
-      if(!area||!codigo||!quantidade||!preco){ alert("⚠️ Preencha todos os campos corretamente!"); return; }
+      if(!area || !codigo || !quantidade || !preco){ alert("⚠️ Preencha todos os campos corretamente!"); return; }
 
       const produto = { área: area, código: codigo, pares: quantidade, preço: preco, valor: preco*quantidade };
+      await push(produtosRef, produto);
 
-      // Atualiza Firebase
-      const snapshot = await get(produtosRef);
-      let listaAtual = snapshot.exists() ? snapshot.val() : [];
-      listaAtual.push(produto);
-      await set(produtosRef, listaAtual);
-
-      // Limpa inputs
-      document.getElementById("codigoInput").value="";
-      document.getElementById("quantidadeInput").value="";
+      document.getElementById("codigoInput").value = "";
+      document.getElementById("quantidadeInput").value = "";
       document.getElementById("codigoInput").focus();
+    }
+
+    async function editarProduto(index){
+      const produto = contagemProdutos[index];
+      const novoValor = prompt(`Editar quantidade de pares para ${produto.código}:`, produto.pares);
+      const pares = parseInt(novoValor);
+      if(!pares || pares <= 0){ alert("⚠️ Quantidade inválida."); return; }
+
+      const produtoRef = ref(db, `salas/${salaCodigo}/contagem/produtos/${produto.id}`);
+      await set(produtoRef, { ...produto, pares, valor: produto.preço * pares });
+    }
+
+    async function removerProduto(index){
+      const produto = contagemProdutos[index];
+      if(!confirm(`Deseja remover ${produto.código}?`)) return;
+
+      const produtoRef = ref(db, `salas/${salaCodigo}/contagem/produtos/${produto.id}`);
+      await set(produtoRef, null);
     }
 
     function renderizarLista(){
       const lista = document.getElementById("listaProdutos");
       lista.innerHTML="";
       let html="", areaAnterior="", somaFinalArea=0;
+
       contagemProdutos.forEach((item,index)=>{
         const novaArea = item.área !== areaAnterior;
         if(novaArea && areaAnterior!=="") html+=`<div style="padding:6px;text-align:right;font-weight:bold;color:#333;">➡️ Total da Área ${areaAnterior}: ${formatarValor(somaFinalArea)} (pares+preços)</div>`;
@@ -152,30 +167,21 @@
         html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px dashed #ccc;">
           <div><div><strong>${item.código}</strong></div><div>${item.pares} pares × ${formatarValor(item.preço)} = <strong>${formatarValor(item.valor)}</strong></div></div>
           <div style="display:flex;gap:5px;">
-            <button onclick="editarProduto(${index})" style="background:#ffc107;border:none;padding:5px 10px;border-radius:5px;cursor:pointer;">✏️ Editar</button>
-            <button onclick="removerProduto(${index})" style="background:#dc3545;color:white;border:none;padding:5px 10px;border-radius:5px;cursor:pointer;">🗑️ Remover</button>
+            <button data-index="${index}" class="btn-editar" style="background:#ffc107;border:none;padding:5px 10px;border-radius:5px;cursor:pointer;">✏️ Editar</button>
+            <button data-index="${index}" class="btn-remover" style="background:#dc3545;color:white;border:none;padding:5px 10px;border-radius:5px;">🗑️ Remover</button>
           </div>
         </div>`;
         somaFinalArea+=item.pares+item.preço;
       });
+
       if(areaAnterior!=="") html+=`<div style="padding:6px;text-align:right;font-weight:bold;color:#333;">➡️ Total da Área ${areaAnterior}: ${formatarValor(somaFinalArea)} (pares+preços)</div>`;
       lista.innerHTML=html;
+
+      // Adicionar eventos para editar/remover
+      document.querySelectorAll(".btn-editar").forEach(btn=>btn.addEventListener("click", e=>editarProduto(e.target.dataset.index)));
+      document.querySelectorAll(".btn-remover").forEach(btn=>btn.addEventListener("click", e=>removerProduto(e.target.dataset.index)));
+
       renderizarCamposManuais();
-    }
-
-    async function editarProduto(index){
-      const novoValor = prompt(`Editar quantidade de pares para ${contagemProdutos[index].código}:`, contagemProdutos[index].pares);
-      const pares = parseInt(novoValor);
-      if(!pares||pares<=0){ alert("⚠️ Quantidade inválida."); return; }
-      contagemProdutos[index].pares=pares;
-      contagemProdutos[index].valor=contagemProdutos[index].preço*pares;
-      await set(produtosRef, contagemProdutos);
-    }
-
-    async function removerProduto(index){
-      if(!confirm(`Deseja remover ${contagemProdutos[index].código}?`)) return;
-      contagemProdutos.splice(index,1);
-      await set(produtosRef, contagemProdutos);
     }
 
     function renderizarCamposManuais(){
@@ -204,6 +210,7 @@
 
     function formatarValor(num){ return Number.isInteger(num)?num.toString():num.toFixed(2); }
 
+    // Exportar Excel
     function exportarParaExcel(){
       if(contagemProdutos.length===0){ alert("⚠️ Nenhum item para exportar."); return; }
       const agrupado={};
@@ -229,6 +236,11 @@
       const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"Contagem");
       XLSX.writeFile(wb,"contagem_ziza.xlsx");
     }
+
+    // Conectar botões
+    document.getElementById("btnAdicionar").addEventListener("click", adicionarProduto);
+    document.getElementById("btnExportar").addEventListener("click", exportarParaExcel);
+
   </script>
 </body>
 </html>
