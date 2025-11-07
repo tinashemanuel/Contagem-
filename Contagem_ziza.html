@@ -3,194 +3,39 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CONTAGEM ZIZA</title>
+  <title>CONTAGEM ZIZA - Modo Sincronizado</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
-  body {
-    font-family: 'Segoe UI', sans-serif;
-    background-color: #f1f3f5;
-    margin: 0;
-    padding: 15px;
-  }
-
-  .container {
-    max-width: 600px;
-    margin: auto;
-    background-color: #fff;
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 0 15px rgba(0,0,0,0.1);
-  }
-
-  h2, h3 {
-    text-align: center;
-    color: #333;
-    font-size: 1.5em;
-  }
-
-  .upload-label {
-    display: block;
-    margin-bottom: 10px;
-    font-weight: bold;
-    color: #555;
-    font-size: 1em;
-  }
-
-  .file-input {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #e9ecef;
-    padding: 12px;
-    border-radius: 8px;
-    border: 2px dashed #ccc;
-    cursor: pointer;
-    text-align: center;
-    color: #555;
-    font-size: 0.95em;
-  }
-
-  .file-input input[type="file"] {
-    display: none;
-  }
-
-  #statusMensagem {
-    margin-top: 10px;
-    font-size: 0.95em;
-    font-weight: bold;
-    text-align: center;
-  }
-
-  .sucesso {
-    color: green;
-  }
-
-  .erro {
-    color: red;
-  }
-
-  .btn {
-    width: 100%;
-    padding: 12px;
-    margin-top: 10px;
-    border: none;
-    border-radius: 6px;
-    font-weight: bold;
-    cursor: pointer;
-    font-size: 1em;
-  }
-
-  .btn-add {
-    background-color: #28a745;
-    color: white;
-  }
-
-  .btn-export {
-    background-color: #007bff;
-    color: white;
-  }
-
-  #listaProdutos > div {
-    margin-top: 10px;
-  }
-
-  #valoresManuais {
-    margin-top: 30px;
-    border-top: 2px solid #ddd;
-    padding-top: 20px;
-  }
-
-  #inputsManuais {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
-
-  #inputsManuais label {
-    font-weight: 600;
-    color: #444;
-    margin-bottom: 4px;
-    display: block;
-    font-size: 0.9em;
-  }
-
-  #inputsManuais input[type="number"] {
-    width: 100%;
-    padding: 6px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-    font-size: 14px;
-  }
-
-  #totaisContainer {
-    margin-top: 15px;
-    font-weight: bold;
-    font-size: 1em;
-    text-align: center;
-  }
-
-  input.input {
-    padding: 12px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    font-size: 1em;
-  }
-
-  @media (max-width: 500px) {
-    h2 {
-      font-size: 1.2em;
-    }
-
-    .btn {
-      padding: 10px;
-      font-size: 0.95em;
-    }
-
-    .file-input {
-      padding: 10px;
-      font-size: 0.9em;
-    }
-
-    #inputsManuais {
-      grid-template-columns: 1fr;
-    }
-
-    input.input {
-      padding: 10px;
-      font-size: 0.95em;
-    }
-
-    #inputsManuais input[type="number"] {
-      font-size: 0.95em;
-    }
-
-    #totaisContainer {
-      font-size: 0.95em;
-    }
-  }
-</style>
+    body { font-family: 'Segoe UI', sans-serif; background-color:#f1f3f5; margin:0; padding:15px; }
+    .container { max-width:600px; margin:auto; background:#fff; border-radius:10px; padding:20px; box-shadow:0 0 15px rgba(0,0,0,0.1); }
+    h2,h3 { text-align:center; color:#333; font-size:1.5em; }
+    .input { width:100%; padding:10px; margin-bottom:10px; border-radius:6px; border:1px solid #ccc; font-size:1em; }
+    .btn { width:100%; padding:12px; margin-top:10px; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1em; }
+    .btn-add { background-color:#28a745; color:white; }
+    .btn-export { background-color:#007bff; color:white; }
+    #listaProdutos > div { margin-top:10px; }
+    #valoresManuais { margin-top:30px; border-top:2px solid #ddd; padding-top:20px; }
+    #inputsManuais { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    #inputsManuais label { font-weight:600; color:#444; font-size:0.9em; margin-bottom:4px; display:block; }
+    #inputsManuais input[type="number"] { width:100%; padding:6px; border-radius:4px; border:1px solid #ccc; font-size:14px; }
+    #totaisContainer { margin-top:15px; font-weight:bold; font-size:1em; text-align:center; }
+    @media (max-width:500px) { #inputsManuais { grid-template-columns:1fr; } }
+  </style>
 </head>
 <body>
-
   <div class="container">
-    <h2>📦 CONTAGEM ZIZA</h2>
+    <h2>📦 CONTAGEM ZIZA - Modo Sincronizado</h2>
 
-    <label class="upload-label">1º Passo: Carregue a base de dados (Excel)</label>
+    <label>1º Passo: Carregar base de dados (Excel)</label>
+    <input type="file" id="arquivoExcel" accept=".xlsx" class="input" />
 
-    <label class="file-input" for="arquivoExcel">
-      📁 Clique aqui para escolher o arquivo Excel (.xlsx)
-      <input type="file" id="arquivoExcel" accept=".xlsx" />
-    </label>
+    <div id="statusMensagem" style="text-align:center; margin-top:10px;"></div>
 
-    <div id="statusMensagem"></div>
-
-    <div id="formulario" style="display:none; margin-top: 20px;">
-      <label class="upload-label">2º Passo: Inserir Contagem</label>
-
-      <input type="text" id="areaInput" placeholder="Área (Ex: Prateleira 1)" class="input" style="width:100%; margin-bottom:10px; padding:10px; border-radius:6px; border:1px solid #ccc;" />
-      <input type="text" id="codigoInput" placeholder="Código do produto" class="input" style="width:100%; margin-bottom:10px; padding:10px; border-radius:6px; border:1px solid #ccc;" />
-      <input type="number" id="quantidadeInput" placeholder="Quantidade (pares)" class="input" style="width:100%; margin-bottom:10px; padding:10px; border-radius:6px; border:1px solid #ccc;" />
-
+    <div id="formulario" style="display:none; margin-top:20px;">
+      <label>2º Passo: Inserir Contagem</label>
+      <input type="text" id="areaInput" placeholder="Área (Ex: Prateleira 1)" class="input" />
+      <input type="text" id="codigoInput" placeholder="Código do produto" class="input" />
+      <input type="number" id="quantidadeInput" placeholder="Quantidade (pares)" class="input" />
       <button onclick="adicionarProduto()" class="btn btn-add">➕ Adicionar</button>
       <button onclick="exportarParaExcel()" class="btn btn-export">📤 Exportar Contagem</button>
 
@@ -206,291 +51,184 @@
     </div>
   </div>
 
-  <script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+    import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
+
+    // Config Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyAhIcEttYA_zNawM-TgBX20pJ2rFnZ4UQM",
+      authDomain: "contagem-2f002.firebaseapp.com",
+      projectId: "contagem-2f002",
+      storageBucket: "contagem-2f002.firebasestorage.app",
+      messagingSenderId: "606594368212",
+      appId: "1:606594368212:web:c105c3f9852e59f4667141",
+      databaseURL: "https://contagem-2f002-default-rtdb.firebaseio.com"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Sala
+    function getCodigoSala() { return new URLSearchParams(window.location.search).get("sala"); }
+    const salaCodigo = getCodigoSala();
+    if (!salaCodigo) { alert("Código da sala inválido!"); throw new Error("Sala não informada."); }
+
     let basePrecos = {};
     let contagemProdutos = [];
-
-    const camposFixos = [
-      "Caixa", "Saldo", "Pagamento", "Inventário", "Devolução", "Lucro",
-      ...Array.from({ length: 30 }, (_, i) => `Lucro dia ${i + 2}`),
-      "Fixo"
-    ];
-
+    const camposFixos = ["Caixa","Saldo","Pagamento","Inventário","Devolução","Lucro", ...Array.from({length:30}, (_,i)=>`Lucro dia ${i+2}`), "Fixo"];
     let valoresManuais = {};
 
-    document.getElementById("arquivoExcel").addEventListener("change", function (e) {
-      const file = e.target.files[0];
-      if (!file) return;
+    const produtosRef = ref(db, `salas/${salaCodigo}/contagem/produtos`);
 
+    // Função para escutar mudanças em tempo real
+    onValue(produtosRef, (snapshot)=>{
+      contagemProdutos = snapshot.exists() ? snapshot.val() : [];
+      renderizarLista();
+      atualizarTotaisGerais();
+    });
+
+    // Carregar Excel
+    document.getElementById("arquivoExcel").addEventListener("change", e=>{
+      const file = e.target.files[0];
+      if(!file) return;
       const reader = new FileReader();
-      reader.onload = function (e) {
+      reader.onload = e=>{
         const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: "array" });
+        const workbook = XLSX.read(data,{type:"array"});
         const primeira = workbook.SheetNames[0];
         const planilha = XLSX.utils.sheet_to_json(workbook.Sheets[primeira]);
 
         const status = document.getElementById("statusMensagem");
-
-        if (planilha.length === 0) {
-          status.textContent = "⚠️ A planilha está vazia.";
-          status.className = "erro";
-          return;
-        }
+        if(planilha.length===0){ status.textContent="⚠️ Planilha vazia"; status.className="erro"; return; }
 
         const colunas = Object.keys(planilha[0]);
-        const nomeCodigo = colunas.find(c => c.includes('码') || c.toLowerCase().includes('código'));
-        const nomePreco = colunas.find(c => c.includes('价') || c.toLowerCase().includes('preço'));
+        const nomeCodigo = colunas.find(c=>c.includes('码')||c.toLowerCase().includes('código'));
+        const nomePreco = colunas.find(c=>c.includes('价')||c.toLowerCase().includes('preço'));
 
-        if (!nomeCodigo || !nomePreco) {
-          status.textContent = "⚠️ As colunas de código ou preço não foram encontradas!";
-          status.className = "erro";
-          return;
-        }
+        if(!nomeCodigo||!nomePreco){ status.textContent="⚠️ Colunas código/preço não encontradas"; status.className="erro"; return; }
 
         basePrecos = {};
-        planilha.forEach(row => {
-          if (row[nomeCodigo] && row[nomePreco]) {
-            basePrecos[String(row[nomeCodigo]).trim().toUpperCase()] = parseFloat(row[nomePreco]);
-          }
-        });
+        planilha.forEach(row=>{ if(row[nomeCodigo] && row[nomePreco]) basePrecos[String(row[nomeCodigo]).trim().toUpperCase()] = parseFloat(row[nomePreco]); });
 
-        if (Object.keys(basePrecos).length === 0) {
-          status.textContent = "⚠️ Nenhum código/preço válido encontrado!";
-          status.className = "erro";
-        } else {
-          status.textContent = "✅ Base carregada com sucesso!";
-          status.className = "sucesso";
-          document.getElementById("formulario").style.display = "block";
-          renderizarCamposManuais();
-        }
+        if(Object.keys(basePrecos).length===0){ status.textContent="⚠️ Nenhum código/preço válido"; status.className="erro"; return; }
+
+        status.textContent="✅ Base carregada com sucesso"; status.className="sucesso";
+        document.getElementById("formulario").style.display="block";
+        renderizarCamposManuais();
       };
-
       reader.readAsArrayBuffer(file);
     });
 
-    function adicionarProduto() {
+    async function adicionarProduto(){
       const area = document.getElementById("areaInput").value.trim().toUpperCase();
       const codigo = document.getElementById("codigoInput").value.trim().toUpperCase();
       const quantidade = parseInt(document.getElementById("quantidadeInput").value.trim());
       const preco = basePrecos[codigo];
+      if(!area||!codigo||!quantidade||!preco){ alert("⚠️ Preencha todos os campos corretamente!"); return; }
 
-      if (!area) return alert("⚠️ Digite a área.");
-      if (!codigo) return alert("⚠️ Digite o código.");
-      if (!quantidade || quantidade <= 0) return alert("⚠️ Quantidade inválida.");
-      if (!preco) return alert("⚠️ Código não encontrado na base!");
+      const produto = { área: area, código: codigo, pares: quantidade, preço: preco, valor: preco*quantidade };
 
-      const valor = preco * quantidade;
+      // Atualiza Firebase
+      const snapshot = await get(produtosRef);
+      let listaAtual = snapshot.exists() ? snapshot.val() : [];
+      listaAtual.push(produto);
+      await set(produtosRef, listaAtual);
 
-      contagemProdutos.push({ área: area, código: codigo, pares: quantidade, preço: preco, valor: valor });
-
-      renderizarLista();
-
-      document.getElementById("codigoInput").value = "";
-      document.getElementById("quantidadeInput").value = "";
+      // Limpa inputs
+      document.getElementById("codigoInput").value="";
+      document.getElementById("quantidadeInput").value="";
       document.getElementById("codigoInput").focus();
-
-      atualizarTotaisGerais();
-window.adicionarProduto = adicionarProduto;
     }
 
-    function renderizarLista() {
-  const lista = document.getElementById("listaProdutos");
-  lista.innerHTML = "";
-
-  let html = "";
-  let areaAnterior = "";
-  let somaFinalArea = 0;
-
-  contagemProdutos.forEach((item, index) => {
-    const novaArea = item.área !== areaAnterior;
-
-    if (novaArea && areaAnterior !== "") {
-      // Mostrar total combinado da área anterior (pares + preços unitários somados)
-      html += `
-        <div style="padding:6px; text-align:right; font-weight:bold; color:#333;">
-          ➡️ Total da Área ${areaAnterior}: ${formatarValor(somaFinalArea)} (pares + preços)
+    function renderizarLista(){
+      const lista = document.getElementById("listaProdutos");
+      lista.innerHTML="";
+      let html="", areaAnterior="", somaFinalArea=0;
+      contagemProdutos.forEach((item,index)=>{
+        const novaArea = item.área !== areaAnterior;
+        if(novaArea && areaAnterior!=="") html+=`<div style="padding:6px;text-align:right;font-weight:bold;color:#333;">➡️ Total da Área ${areaAnterior}: ${formatarValor(somaFinalArea)} (pares+preços)</div>`;
+        if(novaArea){ html+=`<div style="margin-top:30px;padding:8px;background:#f8f9fa;border-left:4px solid #007bff;"><strong>Área:</strong> ${item.área}</div>`; areaAnterior=item.área; somaFinalArea=0; }
+        html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px dashed #ccc;">
+          <div><div><strong>${item.código}</strong></div><div>${item.pares} pares × ${formatarValor(item.preço)} = <strong>${formatarValor(item.valor)}</strong></div></div>
+          <div style="display:flex;gap:5px;">
+            <button onclick="editarProduto(${index})" style="background:#ffc107;border:none;padding:5px 10px;border-radius:5px;cursor:pointer;">✏️ Editar</button>
+            <button onclick="removerProduto(${index})" style="background:#dc3545;color:white;border:none;padding:5px 10px;border-radius:5px;cursor:pointer;">🗑️ Remover</button>
+          </div>
         </div>`;
+        somaFinalArea+=item.pares+item.preço;
+      });
+      if(areaAnterior!=="") html+=`<div style="padding:6px;text-align:right;font-weight:bold;color:#333;">➡️ Total da Área ${areaAnterior}: ${formatarValor(somaFinalArea)} (pares+preços)</div>`;
+      lista.innerHTML=html;
+      renderizarCamposManuais();
     }
 
-    if (novaArea) {
-      html += `<div style="margin-top:30px; padding:8px; background:#f8f9fa; border-left:4px solid #007bff;">
-        <strong>Área:</strong> ${item.área}
-      </div>`;
-      areaAnterior = item.área;
-      somaFinalArea = 0;
-    }
-
-    html += `
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed #ccc;">
-        <div>
-          <div><strong>${item.código}</strong></div>
-          <div>${item.pares} pares × ${formatarValor(item.preço)} = <strong>${formatarValor(item.valor)}</strong></div>
-        </div>
-        <div style="display:flex; gap:5px;">
-          <button onclick="editarProduto(${index})" style="background:#ffc107; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">✏️ Editar</button>
-          <button onclick="removerProduto(${index})" style="background:#dc3545; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">🗑️ Remover</button>
-        </div>
-      </div>
-    `;
-
-    somaFinalArea += item.pares + item.preço;
-  });
-
-  // Total da última área
-  if (areaAnterior !== "") {
-    html += `
-      <div style="padding:6px; text-align:right; font-weight:bold; color:#333;">
-        ➡️ Total da Área ${areaAnterior}: ${formatarValor(somaFinalArea)} (pares + preços)
-      </div>`;
-  }
-
-  lista.innerHTML = html;
-
-  renderizarCamposManuais();
-}
-
-    function editarProduto(index) {
-      const novoValor = prompt(`Editar quantidade de pares para o código ${contagemProdutos[index].código}:`, contagemProdutos[index].pares);
+    async function editarProduto(index){
+      const novoValor = prompt(`Editar quantidade de pares para ${contagemProdutos[index].código}:`, contagemProdutos[index].pares);
       const pares = parseInt(novoValor);
-
-      if (!pares || pares <= 0) {
-        alert("⚠️ Quantidade inválida.");
-        return;
-      }
-
-      contagemProdutos[index].pares = pares;
-      contagemProdutos[index].valor = contagemProdutos[index].preço * pares;
-
-      renderizarLista();
-      atualizarTotaisGerais();
+      if(!pares||pares<=0){ alert("⚠️ Quantidade inválida."); return; }
+      contagemProdutos[index].pares=pares;
+      contagemProdutos[index].valor=contagemProdutos[index].preço*pares;
+      await set(produtosRef, contagemProdutos);
     }
 
-    function removerProduto(index) {
-      const confirmado = confirm(`Deseja remover o código ${contagemProdutos[index].código} da lista?`);
-      if (confirmado) {
-        contagemProdutos.splice(index, 1);
-        renderizarLista();
-        atualizarTotaisGerais();
-      }
+    async function removerProduto(index){
+      if(!confirm(`Deseja remover ${contagemProdutos[index].código}?`)) return;
+      contagemProdutos.splice(index,1);
+      await set(produtosRef, contagemProdutos);
     }
 
-    function renderizarCamposManuais() {
-      const container = document.getElementById("inputsManuais");
-      container.innerHTML = "";
-
-      camposFixos.forEach(campo => {
-        const div = document.createElement("div");
-        div.innerHTML = `
-          <label>${campo}</label>
-          <input type="number" data-nome="${campo}" value="${valoresManuais[campo] || ''}" 
-            style="width: 100%; padding: 5px; border-radius: 4px; border: 1px solid #ccc;" 
-            oninput="atualizarTotaisGerais()">
-        `;
+    function renderizarCamposManuais(){
+      const container=document.getElementById("inputsManuais"); container.innerHTML="";
+      camposFixos.forEach(campo=>{
+        const div=document.createElement("div");
+        div.innerHTML=`<label>${campo}</label><input type="number" data-nome="${campo}" value="${valoresManuais[campo]||''}" style="width:100%;padding:5px;border-radius:4px;border:1px solid #ccc;" oninput="atualizarTotaisGerais()">`;
         container.appendChild(div);
       });
-
       atualizarTotaisGerais();
     }
 
-    function atualizarTotaisGerais() {
-  // Soma dos valores dos produtos
-  let total = contagemProdutos.reduce((soma, item) => soma + item.valor, 0);
+    function atualizarTotaisGerais(){
+      let total=contagemProdutos.reduce((soma,item)=>soma+item.valor,0);
+      document.querySelectorAll('#inputsManuais input').forEach(input=>{
+        const nome=input.dataset.nome;
+        let valor=parseFloat(input.value)||0;
+        if(nome.toLowerCase().includes('lucro')) valor=-Math.abs(valor);
+        valoresManuais[nome]=valor;
+        if(nome!=="Fixo") total+=valor;
+      });
+      const fixo=valoresManuais["Fixo"]||0;
+      document.getElementById("valorTotal").textContent=formatarValor(total);
+      document.getElementById("valorConclusao").textContent=formatarValor(total-fixo);
+    }
 
-  // Adicionar valores manuais (Lucros são negativos)
-  document.querySelectorAll('#inputsManuais input').forEach(input => {
-    const nome = input.dataset.nome;
-    let valor = parseFloat(input.value) || 0;
-    if (nome.toLowerCase().includes('lucro')) valor = -Math.abs(valor);
+    function formatarValor(num){ return Number.isInteger(num)?num.toString():num.toFixed(2); }
 
-    valoresManuais[nome] = valor;
-    if (nome !== "Fixo") total += valor;
-  });
-
-  const fixo = valoresManuais["Fixo"] || 0;
-  const conclusao = total - fixo;
-
-  document.getElementById("valorTotal").textContent = formatarValor(total);
-  document.getElementById("valorConclusao").textContent = formatarValor(conclusao);
-}
-    
-function formatarValor(num) {
-  return Number.isInteger(num) ? num.toString() : num.toFixed(2);
-}
-
-function exportarParaExcel() {
-  if (contagemProdutos.length === 0) {
-    alert("⚠️ Nenhum item para exportar.");
-    return;
-  }
-
-  // Agrupar produtos por área
-  const agrupado = {};
-  contagemProdutos.forEach(item => {
-    if (!agrupado[item.área]) agrupado[item.área] = [];
-    agrupado[item.área].push(item);
-  });
-
-  const dadosFinal = [["Área", "Código", "Pares", "Preço", "Valor"]];
-
-  for (const area in agrupado) {
-    agrupado[area].forEach(item => {
-      dadosFinal.push([
-        item.área,
-        item.código,
-        item.pares,
-        formatarValor(item.preço),
-        formatarValor(item.valor)
-      ]);
-    });
-    dadosFinal.push([""]); // espaço entre áreas
-  }
-
-  // Linhas vazias antes dos blocos manuais
-  dadosFinal.push([""]);
-  dadosFinal.push([""]);
-
-  // Calcular total dos produtos
-  let totalProdutos = contagemProdutos.reduce((sum, item) => sum + item.valor, 0);
-  let totalFinal = totalProdutos;
-
-  // Adiciona os blocos manuais (exceto "Fixo")
-  camposFixos.forEach(campo => {
-    if (campo === "Fixo") return; // pula o FIXO aqui
-
-    let valor = parseFloat(valoresManuais[campo]) || 0;
-    if (campo.toLowerCase().includes("lucro")) valor = -Math.abs(valor);
-    totalFinal += valor;
-
-    dadosFinal.push(["", "", "", campo.toUpperCase(), formatarValor(valor)]);
-  });
-
-  // Adiciona o TOTAL antes do FIXO
-  dadosFinal.push(["", "", "", "TOTAL", formatarValor(totalFinal)]);
-
-  // Agora adiciona o FIXO
-  let fixo = parseFloat(valoresManuais["Fixo"]) || 0;
-  dadosFinal.push(["", "", "", "FIXO", formatarValor(fixo)]);
-
-  // E por fim a CONCLUSÃO = TOTAL - FIXO
-  dadosFinal.push(["", "", "", "CONCLUSÃO", formatarValor(totalFinal - fixo)]);
-
-  // Criar e exportar o Excel
-  const ws = XLSX.utils.aoa_to_sheet(dadosFinal);
-
-  // Aumentar largura da 4ª coluna (Preço)
-  ws['!cols'] = [
-    { wch: 12 }, // Área
-    { wch: 12 }, // Código
-    { wch: 10 }, // Pares
-    { wch: 15 }, // Preço (coluna 4)
-    { wch: 12 }  // Valor
-  ];
-
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Contagem");
-
-  XLSX.writeFile(wb, "contagem_ziza.xlsx");
-}
+    function exportarParaExcel(){
+      if(contagemProdutos.length===0){ alert("⚠️ Nenhum item para exportar."); return; }
+      const agrupado={};
+      contagemProdutos.forEach(item=>{ if(!agrupado[item.área]) agrupado[item.área]=[]; agrupado[item.área].push(item); });
+      const dadosFinal=[["Área","Código","Pares","Preço","Valor"]];
+      for(const area in agrupado){ agrupado[area].forEach(item=>{ dadosFinal.push([item.área,item.código,item.pares,formatarValor(item.preço),formatarValor(item.valor)]); }); dadosFinal.push([""]); }
+      dadosFinal.push([""],[""]);
+      let totalProdutos=contagemProdutos.reduce((sum,item)=>sum+item.valor,0);
+      let totalFinal=totalProdutos;
+      camposFixos.forEach(campo=>{
+        if(campo==="Fixo") return;
+        let valor=parseFloat(valoresManuais[campo])||0;
+        if(campo.toLowerCase().includes("lucro")) valor=-Math.abs(valor);
+        totalFinal+=valor;
+        dadosFinal.push(["","", "", campo.toUpperCase(), formatarValor(valor)]);
+      });
+      dadosFinal.push(["","", "", "TOTAL", formatarValor(totalFinal)]);
+      let fixo=parseFloat(valoresManuais["Fixo"])||0;
+      dadosFinal.push(["","", "", "FIXO", formatarValor(fixo)]);
+      dadosFinal.push(["","", "", "CONCLUSÃO", formatarValor(totalFinal-fixo)]);
+      const ws=XLSX.utils.aoa_to_sheet(dadosFinal);
+      ws['!cols']=[{wch:12},{wch:12},{wch:10},{wch:15},{wch:12}];
+      const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"Contagem");
+      XLSX.writeFile(wb,"contagem_ziza.xlsx");
+    }
   </script>
 </body>
 </html>
