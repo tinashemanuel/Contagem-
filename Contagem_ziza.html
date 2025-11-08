@@ -99,26 +99,31 @@ document.getElementById("arquivoExcel").addEventListener("change", e => {
   if(!file) return;
   const reader = new FileReader();
   reader.onload = e => {
-    const data = new Uint8Array(e.target.result);
-    const workbook = XLSX.read(data,{type:"array"});
-    const planilha = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-    const status = document.getElementById("statusMensagem");
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data,{type:"array"});
+      const planilha = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+      const status = document.getElementById("statusMensagem");
 
-    if(planilha.length === 0){ status.textContent="⚠️ A planilha está vazia."; status.className="erro"; return; }
+      if(planilha.length === 0){ status.textContent="⚠️ A planilha está vazia."; status.className="erro"; return; }
 
-    const colunas = Object.keys(planilha[0]);
-    const nomeCodigo = colunas.find(c=>c.includes('码') || c.toLowerCase().includes('código'));
-    const nomePreco = colunas.find(c=>c.includes('价') || c.toLowerCase().includes('preço'));
+      const colunas = Object.keys(planilha[0]);
+      const nomeCodigo = colunas.find(c=>c.toLowerCase().includes('código') || c.toLowerCase().includes('codigo'));
+      const nomePreco = colunas.find(c=>c.toLowerCase().includes('preço') || c.toLowerCase().includes('preco'));
 
-    if(!nomeCodigo || !nomePreco){ status.textContent="⚠️ As colunas de código ou preço não foram encontradas!"; status.className="erro"; return; }
+      if(!nomeCodigo || !nomePreco){ status.textContent="⚠️ Colunas de código/preço não encontradas!"; status.className="erro"; return; }
 
-    basePrecos = {};
-    planilha.forEach(row=>{
-      if(row[nomeCodigo] && row[nomePreco]) basePrecos[String(row[nomeCodigo]).trim().toUpperCase()] = parseFloat(row[nomePreco]);
-    });
+      basePrecos = {};
+      planilha.forEach(row=>{
+        if(row[nomeCodigo] && row[nomePreco]) basePrecos[String(row[nomeCodigo]).trim().toUpperCase()] = parseFloat(row[nomePreco]);
+      });
 
-    if(Object.keys(basePrecos).length === 0){ status.textContent="⚠️ Nenhum código/preço válido encontrado!"; status.className="erro"; }
-    else { status.textContent="✅ Base carregada com sucesso!"; status.className="sucesso"; document.getElementById("formulario").style.display="block"; localStorage.setItem("basePrecosZiza",JSON.stringify(basePrecos)); renderizarCamposManuais(); }
+      if(Object.keys(basePrecos).length === 0){ status.textContent="⚠️ Nenhum código válido encontrado!"; status.className="erro"; }
+      else { status.textContent="✅ Base carregada com sucesso!"; status.className="sucesso"; document.getElementById("formulario").style.display="block"; localStorage.setItem("basePrecosZiza",JSON.stringify(basePrecos)); renderizarCamposManuais(); }
+    } catch (err) {
+      alert("Erro ao ler o arquivo Excel!");
+      console.error(err);
+    }
   };
   reader.readAsArrayBuffer(file);
 });
@@ -130,7 +135,7 @@ if(baseSalva){ try{ basePrecos=JSON.parse(baseSalva); document.getElementById("f
 function salvarContagemFirebase(){
   if(!codigoSala) return;
   const contagemRef = ref(db,`salas/${codigoSala}/contagem`);
-  set(contagemRef,{
+  update(contagemRef,{
     produtos: contagemProdutos,
     ordemAreas,
     valores: valoresManuais
@@ -209,109 +214,40 @@ function renderizarLista(){
   renderizarCamposManuais();
 }
 
-function editarProduto(index){
-  const novoValor=prompt(`Editar quantidade de pares para o código ${contagemProdutos[index].código}:`,contagemProdutos[index].pares);
-  const pares=parseInt(novoValor);
-  if(!pares||pares<=0){ alert("⚠️ Quantidade inválida."); return; }
-  contagemProdutos[index].pares=pares;
-  contagemProdutos[index].valor=contagemProdutos[index].preço*pares;
-  renderizarLista(); atualizarTotaisGerais(); salvarContagemFirebase();
-}
-
-function removerProduto(index){
-  if(confirm(`Deseja remover o código ${contagemProdutos[index].código}?`)){
-    contagemProdutos.splice(index,1);
-    renderizarLista(); atualizarTotaisGerais(); salvarContagemFirebase();
-  }
-}
-
-function renderizarCamposManuais(){
-  const container=document.getElementById("inputsManuais");
-  container.innerHTML="";
-  camposFixos.forEach(campo=>{
-    const div=document.createElement("div");
-    div.innerHTML=`<label>${campo}</label>
-      <input type="number" data-nome="${campo}" value="${valoresManuais[campo]||''}" oninput="atualizarTotaisGerais()" style="width:100%; padding:5px; border-radius:4px; border:1px solid #ccc;">`;
-    container.appendChild(div);
-  });
-  atualizarTotaisGerais();
-}
-
-function atualizarTotaisGerais(){
-  let total=contagemProdutos.reduce((s,item)=>s+item.valor,0);
-  document.querySelectorAll('#inputsManuais input').forEach(input=>{
-    const nome=input.dataset.nome;
-    let valor=parseFloat(input.value)||0;
-    if(nome.toLowerCase().includes("lucro")) valor=-Math.abs(valor);
-    valoresManuais[nome]=valor;
-    if(nome!=="Fixo") total+=valor;
-  });
-  const fixo=valoresManuais["Fixo"]||0;
-  const conclusao=total-fixo;
-  document.getElementById("valorTotal").textContent=formatarValor(total);
-  document.getElementById("valorConclusao").textContent=formatarValor(conclusao);
-  salvarContagemFirebase();
-}
-
-function formatarValor(num){ return Number.isInteger(num)?num.toString():num.toFixed(2); }
-
-function exportarParaExcel(){
-  if(contagemProdutos.length===0){ alert("⚠️ Nenhum item para exportar."); return; }
-  const agrupado={};
-  contagemProdutos.forEach(item=>{ if(!agrupado[item.área]) agrupado[item.área]=[]; agrupado[item.área].push(item); });
-  const dadosFinal=[["Área","Código","Preço","Pares","Valor"]];
-  for(const area in agrupado){ agrupado[area].forEach(item=>dadosFinal.push([item.área,item.código,formatarValor(item.preço),item.pares,formatarValor(item.valor)])); dadosFinal.push([""]); }
-  dadosFinal.push([""]); dadosFinal.push([""]);
-  let totalProdutos=contagemProdutos.reduce((s,i)=>s+i.valor,0), totalFinal=totalProdutos;
-  camposFixos.forEach(campo=>{ if(campo==="Fixo") return; let valor=parseFloat(valoresManuais[campo])||0; if(campo.toLowerCase().includes("lucro")) valor=-Math.abs(valor); totalFinal+=valor; dadosFinal.push(["","","",campo.toUpperCase(),formatarValor(valor)]); });
-  dadosFinal.push(["","","","TOTAL",formatarValor(totalFinal)]);
-  let fixo=parseFloat(valoresManuais["Fixo"])||0; dadosFinal.push(["","","","FIXO",formatarValor(fixo)]);
-  dadosFinal.push(["","","","CONCLUSÃO",formatarValor(totalFinal-fixo)]);
-  const ws=XLSX.utils.aoa_to_sheet(dadosFinal);
-  ws['!cols']=[{wch:12},{wch:12},{wch:10},{wch:15},{wch:12}];
-  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"Contagem");
-  XLSX.writeFile(wb,"contagem_ziza.xlsx");
-}
-
-function moverArea(area,direcao){
-  const index=ordemAreas.indexOf(area); if(index===-1) return;
-  const novoIndex=index+direcao; ifconst novoIndex=index+direcao; 
-  if(novoIndex<0 || novoIndex>=ordemAreas.length) return;
+function moverArea(area, direcao) {
+  const index = ordemAreas.indexOf(area);
+  if (index === -1) return;
+  const novoIndex = index + direcao;
+  if (novoIndex < 0 || novoIndex >= ordemAreas.length) return;
   [ordemAreas[index], ordemAreas[novoIndex]] = [ordemAreas[novoIndex], ordemAreas[index]];
   renderizarLista();
   salvarContagemFirebase();
 }
 
-// Limpar contagem
-function limparContagem(){
-  if(confirm("Deseja realmente limpar toda a contagem?")){
-    contagemProdutos=[]; ordemAreas=[]; valoresManuais={};
-    renderizarLista(); atualizarTotaisGerais(); salvarContagemFirebase();
-  }
-}
+// -------------------- Restante das funções --------------------
+function editarProduto(index){ const novoValor=prompt(`Editar quantidade de pares para ${contagemProdutos[index].código}:`,contagemProdutos[index].pares); const pares=parseInt(novoValor); if(!pares||pares<=0){ alert("⚠️ Quantidade inválida."); return; } contagemProdutos[index].pares=pares; contagemProdutos[index].valor=contagemProdutos[index].preço*pares; renderizarLista(); atualizarTotaisGerais(); salvarContagemFirebase(); }
+function removerProduto(index){ if(confirm(`Deseja remover ${contagemProdutos[index].código}?`)){ contagemProdutos.splice(index,1); renderizarLista(); atualizarTotaisGerais(); salvarContagemFirebase(); }}
+function renderizarCamposManuais(){ const container=document.getElementById("inputsManuais"); container.innerHTML=""; camposFixos.forEach(campo=>{ const div=document.createElement("div"); div.innerHTML=`<label>${campo}</label><input type="number" data-nome="${campo}" value="${valoresManuais[campo]||''}" oninput="atualizarTotaisGerais()">`; container.appendChild(div); }); atualizarTotaisGerais(); }
+function atualizarTotaisGerais(){ let total=contagemProdutos.reduce((s,i)=>s+i.valor,0); document.querySelectorAll('#inputsManuais input').forEach(input=>{ const nome=input.dataset.nome; let valor=parseFloat(input.value)||0; if(nome.toLowerCase().includes("lucro")) valor=-Math.abs(valor); valoresManuais[nome]=valor; if(nome!=="Fixo") total+=valor; }); const fixo=valoresManuais["Fixo"]||0; const conclusao=total-fixo; document.getElementById("valorTotal").textContent=formatarValor(total); document.getElementById("valorConclusao").textContent=formatarValor(conclusao); salvarContagemFirebase(); }
+function formatarValor(num){ return Number.isInteger(num)?num.toString():num.toFixed(2); }
+function limparContagem(){ if(confirm("Deseja limpar toda a contagem?")){ contagemProdutos=[]; ordemAreas=[]; valoresManuais={}; renderizarLista(); atualizarTotaisGerais(); salvarContagemFirebase(); }}
 
 // -------------------- Sincronização Firebase --------------------
-
-// Gerar ID único para usuário
 usuarioId = "user_"+Math.random().toString(36).substr(2,9);
-
-// Solicitar código da sala
 codigoSala = prompt("Digite o código da sala (ex: SALA123):").trim().toUpperCase();
 document.getElementById("codigoSalaDisplay").textContent=codigoSala;
 
-// Registrar usuário online
 const usuariosRef = ref(db,`salas/${codigoSala}/usuarios/${usuarioId}`);
 set(usuariosRef,true);
 onDisconnect(usuariosRef).remove();
+window.addEventListener('beforeunload',()=>remove(usuariosRef));
 
-// Atualizar lista de usuários online
 const usuariosSalaRef = ref(db,`salas/${codigoSala}/usuarios`);
 onValue(usuariosSalaRef,snap=>{
   const data = snap.val()||{};
   document.getElementById("totalUsuarios").textContent = Object.keys(data).length;
 });
 
-// Receber contagem em tempo real
 const contagemRef = ref(db,`salas/${codigoSala}/contagem`);
 onValue(contagemRef,snap=>{
   const data = snap.val();
@@ -324,6 +260,5 @@ onValue(contagemRef,snap=>{
 });
 
 </script>
-
 </body>
 </html>
