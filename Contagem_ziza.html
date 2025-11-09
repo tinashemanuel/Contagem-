@@ -18,46 +18,22 @@
       border-radius: 10px;
       box-shadow: 0 0 8px rgba(0,0,0,0.1);
     }
-    h2 {
-      text-align: center;
-    }
+    h2 { text-align: center; }
     input, select, button {
-      padding: 10px;
-      margin: 5px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+      padding: 10px; margin: 5px;
+      border: 1px solid #ccc; border-radius: 6px;
     }
     button {
-      background-color: #007bff;
-      color: white;
-      cursor: pointer;
+      background-color: #007bff; color: white; cursor: pointer;
     }
-    button:hover {
-      background-color: #0056b3;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
-    th, td {
-      padding: 8px;
-      text-align: center;
-      border: 1px solid #ddd;
-    }
-    th {
-      background-color: #007bff;
-      color: white;
-    }
-    .total {
-      text-align: right;
-      font-weight: bold;
-      margin-top: 10px;
-    }
+    button:hover { background-color: #0056b3; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { padding: 8px; text-align: center; border: 1px solid #ddd; }
+    th { background-color: #007bff; color: white; }
+    .total { text-align: right; font-weight: bold; margin-top: 10px; }
   </style>
 </head>
 <body>
-
   <div class="container">
     <h2>📦 Contagem Ziza - Sala <span id="codigoSala"></span></h2>
 
@@ -92,36 +68,40 @@
   </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-    import { getDatabase, ref, push, set, onChildAdded } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getDatabase, ref, push, set, onChildAdded } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
-    // 🔥 Configuração Firebase (igual à da página principal)
     const firebaseConfig = {
       apiKey: "AIzaSyAhIcEttYA_zNawM-TgBX20pJ2rFnZ4UQM",
       authDomain: "contagem-2f002.firebaseapp.com",
+      databaseURL: "https://contagem-2f002-default-rtdb.firebaseio.com",
       projectId: "contagem-2f002",
-      storageBucket: "contagem-2f002.firebasestorage.app",
+      storageBucket: "contagem-2f002.appspot.com",
       messagingSenderId: "606594368212",
-      appId: "1:606594368212:web:c105c3f9852e59f4667141",
-      databaseURL: "https://contagem-2f002-default-rtdb.firebaseio.com"
+      appId: "1:606594368212:web:c105c3f9852e59f4667141"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // 🔹 Obter código da sala da URL
+    // Obter o código da sala da URL
     const urlParams = new URLSearchParams(window.location.search);
     const codigoSala = urlParams.get("sala");
+
+    if (!codigoSala) {
+      alert("❌ Código da sala não encontrado na URL!");
+      throw new Error("Sala não definida");
+    }
+
     document.getElementById("codigoSala").textContent = codigoSala;
 
-    // 🔹 Identificador aleatório do usuário
     const userId = "user_" + Math.floor(Math.random() * 10000);
 
-    // 🔹 Registrar usuário na sala
+    // Registrar usuário na sala
     set(ref(db, `salas/${codigoSala}/usuarios/${userId}`), true);
 
-    // 🔹 Adicionar produto
-    document.getElementById("adicionarProduto").addEventListener("click", () => {
+    // Função adicionar produto
+    document.getElementById("adicionarProduto").addEventListener("click", async () => {
       const area = document.getElementById("area").value;
       const codigo = document.getElementById("codigo").value.trim();
       const pares = parseInt(document.getElementById("pares").value);
@@ -144,25 +124,32 @@
         criadoEm: new Date().toISOString()
       };
 
-      const produtosRef = ref(db, `salas/${codigoSala}/contagem/produtos`);
-      const novoRef = push(produtosRef);
-      set(novoRef, produto);
+      try {
+        const produtosRef = ref(db, `salas/${codigoSala}/contagem/produtos`);
+        const novoRef = push(produtosRef);
+        await set(novoRef, produto);
+        console.log("✅ Produto adicionado:", produto);
+      } catch (err) {
+        console.error("Erro ao adicionar produto:", err);
+        alert("Erro ao adicionar produto. Veja o console.");
+      }
 
-      // limpar campos
       document.getElementById("codigo").value = "";
       document.getElementById("pares").value = "";
       document.getElementById("preco").value = "";
     });
 
-    // 🔹 Escutar produtos em tempo real
+    // Escutar produtos adicionados em tempo real
     const produtosRef = ref(db, `salas/${codigoSala}/contagem/produtos`);
     onChildAdded(produtosRef, (snapshot) => {
       const produto = snapshot.val();
-      adicionarNaTabela(produto);
-      atualizarTotal();
+      if (produto) {
+        adicionarNaTabela(produto);
+        atualizarTotal();
+      }
     });
 
-    // 🔹 Função para adicionar produto na tabela
+    // Mostrar produto na tabela
     function adicionarNaTabela(produto) {
       const tabela = document.getElementById("tabelaProdutos");
       const tr = document.createElement("tr");
@@ -177,16 +164,14 @@
       tabela.appendChild(tr);
     }
 
-    // 🔹 Atualizar total geral
-    let totalGeral = 0;
+    // Atualizar total
     function atualizarTotal() {
-      const linhas = document.querySelectorAll("#tabelaProdutos tr");
-      totalGeral = 0;
-      linhas.forEach(linha => {
+      let total = 0;
+      document.querySelectorAll("#tabelaProdutos tr").forEach(linha => {
         const valor = parseFloat(linha.children[4].textContent);
-        totalGeral += isNaN(valor) ? 0 : valor;
+        total += isNaN(valor) ? 0 : valor;
       });
-      document.getElementById("totalGeral").textContent = totalGeral.toFixed(2);
+      document.getElementById("totalGeral").textContent = total.toFixed(2);
     }
   </script>
 </body>
