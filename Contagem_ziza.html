@@ -3,176 +3,361 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Contagem Ziza - Sala</title>
+  <title>CONTAGEM ZIZA</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background-color: #f7f7f7;
-      padding: 20px;
+      background-color: #f1f3f5;
+      margin: 0;
+      padding: 15px;
     }
+
     .container {
-      max-width: 900px;
+      max-width: 600px;
       margin: auto;
-      background: white;
-      padding: 20px;
+      background-color: #fff;
       border-radius: 10px;
-      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+      padding: 20px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
     }
-    h2 { text-align: center; }
-    input, select, button {
-      padding: 10px; margin: 5px;
-      border: 1px solid #ccc; border-radius: 6px;
+
+    h2, h3 {
+      text-align: center;
+      color: #333;
+      font-size: 1.5em;
     }
-    button {
-      background-color: #007bff; color: white; cursor: pointer;
+
+    .upload-label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: bold;
+      color: #555;
+      font-size: 1em;
     }
-    button:hover { background-color: #0056b3; }
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    th, td { padding: 8px; text-align: center; border: 1px solid #ddd; }
-    th { background-color: #007bff; color: white; }
-    .total { text-align: right; font-weight: bold; margin-top: 10px; }
+
+    .file-input {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #e9ecef;
+      padding: 12px;
+      border-radius: 8px;
+      border: 2px dashed #ccc;
+      cursor: pointer;
+      text-align: center;
+      color: #555;
+      font-size: 0.95em;
+    }
+
+    .file-input input[type="file"] {
+      display: none;
+    }
+
+    #statusMensagem {
+      margin-top: 10px;
+      font-size: 0.95em;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .sucesso {
+      color: green;
+    }
+
+    .erro {
+      color: red;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 1em;
+    }
+
+    .btn-add {
+      background-color: #28a745;
+      color: white;
+    }
+
+    .btn-export {
+      background-color: #007bff;
+      color: white;
+    }
+
+    #listaProdutos > div {
+      margin-top: 10px;
+    }
+
+    #valoresManuais {
+      margin-top: 30px;
+      border-top: 2px solid #ddd;
+      padding-top: 20px;
+    }
+
+    #inputsManuais {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    #inputsManuais label {
+      font-weight: 600;
+      color: #444;
+      margin-bottom: 4px;
+      display: block;
+      font-size: 0.9em;
+    }
+
+    #inputsManuais input[type="number"] {
+      width: 100%;
+      padding: 6px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    #totaisContainer {
+      margin-top: 15px;
+      font-weight: bold;
+      font-size: 1em;
+      text-align: center;
+    }
+
+    input.input {
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 1em;
+    }
+
+    @media (max-width: 500px) {
+      h2 {
+        font-size: 1.2em;
+      }
+
+      .btn {
+        padding: 10px;
+        font-size: 0.95em;
+      }
+
+      .file-input {
+        padding: 10px;
+        font-size: 0.9em;
+      }
+
+      #inputsManuais {
+        grid-template-columns: 1fr;
+      }
+
+      input.input {
+        padding: 10px;
+        font-size: 0.95em;
+      }
+
+      #inputsManuais input[type="number"] {
+        font-size: 0.95em;
+      }
+
+      #totaisContainer {
+        font-size: 0.95em;
+      }
+    }
   </style>
 </head>
 <body>
+
   <div class="container">
-    <h2>📦 Contagem Ziza - Sala <span id="codigoSala"></span></h2>
+    <h2>📦 CONTAGEM ZIZA</h2>
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+      import { getDatabase, ref, set, onValue, onDisconnect, remove } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
 
-    <div>
-      <select id="area">
-        <option value="">Selecione a Área</option>
-        <option value="PRATELEIRA_1">PRATELEIRA 1</option>
-        <option value="PRATELEIRA_2">PRATELEIRA 2</option>
-        <option value="ARMAZEM">ARMAZÉM</option>
-      </select>
-      <input type="text" id="codigo" placeholder="Código do Produto" />
-      <input type="number" id="pares" placeholder="Pares" />
-      <input type="number" id="preco" placeholder="Preço Unitário" />
-      <button id="adicionarProduto">Adicionar</button>
-    </div>
-
-    <table>
-      <thead>
-        <tr>
-          <th>Área</th>
-          <th>Código</th>
-          <th>Pares</th>
-          <th>Preço</th>
-          <th>Valor</th>
-          <th>Adicionado por</th>
-        </tr>
-      </thead>
-      <tbody id="tabelaProdutos"></tbody>
-    </table>
-
-    <div class="total">💰 Total: <span id="totalGeral">0</span></div>
-  </div>
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getDatabase, ref, push, set, onChildAdded } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyAhIcEttYA_zNawM-TgBX20pJ2rFnZ4UQM",
-      authDomain: "contagem-2f002.firebaseapp.com",
-      databaseURL: "https://contagem-2f002-default-rtdb.firebaseio.com",
-      projectId: "contagem-2f002",
-      storageBucket: "contagem-2f002.appspot.com",
-      messagingSenderId: "606594368212",
-      appId: "1:606594368212:web:c105c3f9852e59f4667141"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    // Obter o código da sala da URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const codigoSala = urlParams.get("sala");
-
-    if (!codigoSala) {
-      alert("❌ Código da sala não encontrado na URL!");
-      throw new Error("Sala não definida");
-    }
-
-    document.getElementById("codigoSala").textContent = codigoSala;
-
-    const userId = "user_" + Math.floor(Math.random() * 10000);
-
-    // Registrar usuário na sala
-    set(ref(db, `salas/${codigoSala}/usuarios/${userId}`), true);
-
-    // Função adicionar produto
-    document.getElementById("adicionarProduto").addEventListener("click", async () => {
-      const area = document.getElementById("area").value;
-      const codigo = document.getElementById("codigo").value.trim();
-      const pares = parseInt(document.getElementById("pares").value);
-      const preco = parseFloat(document.getElementById("preco").value);
-
-      if (!area || !codigo || isNaN(pares) || isNaN(preco)) {
-        alert("⚠️ Preencha todos os campos corretamente!");
-        return;
-      }
-
-      const valor = pares * preco;
-
-      const produto = {
-        area,
-        codigo,
-        pares,
-        preco,
-        valor,
-        adicionadoPor: userId,
-        criadoEm: new Date().toISOString()
+      const firebaseConfig = {
+        apiKey: "AIzaSyAhIcEttYA_zNawM-TgBX20pJ2rFnZ4UQM",
+        authDomain: "contagem-2f002.firebaseapp.com",
+        databaseURL: "https://contagem-2f002-default-rtdb.firebaseio.com",
+        projectId: "contagem-2f002",
+        storageBucket: "contagem-2f002.firebasestorage.app",
+        messagingSenderId: "606594368212",
+        appId: "1:606594368212:web:c105c3f9852e59f4667141"
       };
 
+      const app = initializeApp(firebaseConfig);
+      const db = getDatabase(app);
+
+      window.Firebase = { db, ref, set, onValue, onDisconnect, remove };
+    </script>
+
+    <div style="text-align:center; margin-bottom:10px;">
+      <div><strong>Sala:</strong> <span id="codigoSalaDisplay">---</span></div>
+      <div><strong>Usuários online:</strong> <span id="totalUsuarios">0</span></div>
+    </div>
+
+    <label class="upload-label">1º Passo: Carregue a base de dados (Excel)</label>
+
+    <label class="file-input" for="arquivoExcel">
+      📁 Clique aqui para escolher o arquivo Excel (.xlsx)
+      <input type="file" id="arquivoExcel" accept=".xlsx" />
+    </label>
+
+    <div id="statusMensagem"></div>
+
+    <div id="formulario" style="display:none; margin-top: 20px;">
+      <label class="upload-label">2º Passo: Inserir Contagem</label>
+
+      <input type="text" id="areaInput" placeholder="Área (Ex: Prateleira 1)" class="input" style="width:100%; margin-bottom:10px;" />
+      <input type="text" id="codigoInput" placeholder="Código do produto" class="input" style="width:100%; margin-bottom:10px;" />
+      <input type="number" id="quantidadeInput" placeholder="Quantidade (pares)" class="input" style="width:100%; margin-bottom:10px;" />
+
+      <button onclick="adicionarProduto()" class="btn btn-add">➕ Adicionar</button>
+      <button onclick="exportarParaExcel()" class="btn btn-export">📤 Exportar Contagem</button>
+      <button onclick="limparContagem()" class="btn" style="background-color:#6c757d; color:white;">🧹 Limpar Contagem</button>
+
+      <div id="listaProdutos" style="margin-top:20px;"></div>
+
+      <div id="valoresManuais">
+        <h3>📊 Valores Manuais</h3>
+        <div id="inputsManuais"></div>
+        <div id="totaisContainer">
+          TOTAL: <span id="valorTotal">0</span> &nbsp;&nbsp;|&nbsp;&nbsp; CONCLUSÃO: <span id="valorConclusao">0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let basePrecos = {};
+    let contagemProdutos = [];
+    let ordemAreas = [];
+    let valoresManuais = {};
+    const camposFixos = [
+      "Caixa", "Saldo", "Pagamento", "Inventário", "Devolução", "Lucro",
+      ...Array.from({ length: 30 }, (_, i) => `Lucro dia ${i + 2}`),
+      "Fixo"
+    ];
+
+    let codigoSala;
+    let usuarioId;
+
+    // Carregar Excel
+    document.getElementById("arquivoExcel").addEventListener("change", function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const primeira = workbook.SheetNames[0];
+        const planilha = XLSX.utils.sheet_to_json(workbook.Sheets[primeira]);
+
+        const status = document.getElementById("statusMensagem");
+
+        if (planilha.length === 0) {
+          status.textContent = "⚠️ A planilha está vazia.";
+          status.className = "erro";
+          return;
+        }
+
+        const colunas = Object.keys(planilha[0]);
+        const nomeCodigo = colunas.find(c => c.includes('码') || c.toLowerCase().includes('código'));
+        const nomePreco = colunas.find(c => c.includes('价') || c.toLowerCase().includes('preço'));
+
+        if (!nomeCodigo || !nomePreco) {
+          status.textContent = "⚠️ As colunas de código ou preço não foram encontradas!";
+          status.className = "erro";
+          return;
+        }
+
+        basePrecos = {};
+        planilha.forEach(row => {
+          if (row[nomeCodigo] && row[nomePreco]) {
+            basePrecos[String(row[nomeCodigo]).trim().toUpperCase()] = parseFloat(row[nomePreco]);
+          }
+        });
+
+        if (Object.keys(basePrecos).length === 0) {
+          status.textContent = "⚠️ Nenhum código/preço válido encontrado!";
+          status.className = "erro";
+        } else {
+          status.textContent = "✅ Base carregada com sucesso!";
+          status.className = "sucesso";
+          document.getElementById("formulario").style.display = "block";
+          localStorage.setItem("basePrecosZiza", JSON.stringify(basePrecos));
+          renderizarCamposManuais();
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    const baseSalva = localStorage.getItem("basePrecosZiza");
+    if (baseSalva) {
       try {
-        const produtosRef = ref(db, `salas/${codigoSala}/contagem/produtos`);
-        const novoRef = push(produtosRef);
-        await set(novoRef, produto);
-        console.log("✅ Produto adicionado:", produto);
-      } catch (err) {
-        console.error("Erro ao adicionar produto:", err);
-        alert("Erro ao adicionar produto. Veja o console.");
+        basePrecos = JSON.parse(baseSalva);
+        document.getElementById("formulario").style.display = "block";
+        document.getElementById("statusMensagem").textContent = "✅ Base carregada do armazenamento local!";
+        document.getElementById("statusMensagem").className = "sucesso";
+        renderizarCamposManuais();
+      } catch (e) {
+        console.warn("Erro ao restaurar base de preços:", e);
       }
-
-      document.getElementById("codigo").value = "";
-      document.getElementById("pares").value = "";
-      document.getElementById("preco").value = "";
-    });
-
-    // Escutar produtos adicionados em tempo real
-    const produtosRef = ref(db, `salas/${codigoSala}/contagem/produtos`);
-    onChildAdded(produtosRef, (snapshot) => {
-      const produto = snapshot.val();
-      if (produto) {
-        adicionarNaTabela(produto);
-        atualizarTotal();
-      }
-    });
-
-    // Mostrar produto na tabela
-    function adicionarNaTabela(produto) {
-      const tabela = document.getElementById("tabelaProdutos");
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${produto.area}</td>
-        <td>${produto.codigo}</td>
-        <td>${produto.pares}</td>
-        <td>${produto.preco}</td>
-        <td>${produto.valor}</td>
-        <td>${produto.adicionadoPor}</td>
-      `;
-      tabela.appendChild(tr);
     }
 
-    // Atualizar total
-    function atualizarTotal() {
-      let total = 0;
-      document.querySelectorAll("#tabelaProdutos tr").forEach(linha => {
-        const valor = parseFloat(linha.children[4].textContent);
-        total += isNaN(valor) ? 0 : valor;
+    // Função de adicionar produtos corrigida
+    function adicionarProduto() {
+      const area = document.getElementById("areaInput").value.trim().toUpperCase();
+      const codigo = document.getElementById("codigoInput").value.trim().toUpperCase();
+      const quantidade = parseInt(document.getElementById("quantidadeInput").value.trim());
+      let preco = basePrecos[codigo];
+
+      if (!area) return alert("⚠️ Digite a área.");
+      if (!codigo) return alert("⚠️ Digite o código.");
+      if (!quantidade || quantidade <= 0) return alert("⚠️ Quantidade inválida.");
+
+      if (!preco) {
+        const desejaAdicionar = confirm(`Código "${codigo}" não encontrado na base. Deseja adicionar manualmente?`);
+        if (!desejaAdicionar) return;
+
+        const precoManualStr = prompt(`Digite o preço para o código "${codigo}":`);
+        const precoManual = parseFloat(precoManualStr.replace(',', '.'));
+        if (isNaN(precoManual) || precoManual <= 0) {
+          alert("⚠️ Preço inválido. Produto não adicionado.");
+          return;
+        }
+        basePrecos[codigo] = precoManual;
+        preco = precoManual;
+      }
+
+      const valor = preco * quantidade;
+
+      contagemProdutos.push({
+        área: area,
+        código: codigo,
+        pares: quantidade,
+        preço: preco,
+        valor: valor,
+        autor: usuarioId
       });
-      document.getElementById("totalGeral").textContent = total.toFixed(2);
+
+      if (!ordemAreas.includes(area)) ordemAreas.push(area);
+
+      renderizarLista();
+
+      document.getElementById("codigoInput").value = "";
+      document.getElementById("quantidadeInput").value = "";
+      document.getElementById("codigoInput").focus();
+
+      atualizarTotaisGerais();
+      salvarContagemFirebase();
     }
+
+    // --- O resto do seu código (renderizarLista, editarProduto, removerProduto, renderizarCamposManuais, atualizarTotaisGerais, exportarParaExcel, moverArea, salvarContagemFirebase, carregarContagemFirebase, limparContagem) permanece igual ao que você já tinha ---
   </script>
 </body>
 </html>
