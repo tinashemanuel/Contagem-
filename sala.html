@@ -101,7 +101,7 @@
           }
         });
         // Redireciona para a página da contagem com código da sala
-        window.location.href = `contagem.html?sala=${codigo}`;
+        window.location.href = `Contagem_ziza.html?sala=${codigo}`;
       } catch (e) {
         alert("Erro ao criar sala: " + e.message);
         console.error(e);
@@ -119,7 +119,7 @@
         const salaRef = ref(db);
         const snapshot = await get(child(salaRef, "salas/" + codigo));
         if (snapshot.exists()) {
-          window.location.href = `contagem.html?sala=${codigo}`;
+          window.location.href = `Contagem_ziza.html?sala=${codigo}`;
         } else {
           alert("❌ Sala não encontrada. Verifique o código.");
         }
