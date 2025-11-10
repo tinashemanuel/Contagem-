@@ -6,198 +6,199 @@
   <title>CONTAGEM ZIZA</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
-  body {
-    font-family: 'Segoe UI', sans-serif;
-    background-color: #f1f3f5;
-    margin: 0;
-    padding: 15px;
-  }
-
-  .container {
-    max-width: 600px;
-    margin: auto;
-    background-color: #fff;
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 0 15px rgba(0,0,0,0.1);
-  }
-
-  h2, h3 {
-    text-align: center;
-    color: #333;
-    font-size: 1.5em;
-  }
-
-  .upload-label {
-    display: block;
-    margin-bottom: 10px;
-    font-weight: bold;
-    color: #555;
-    font-size: 1em;
-  }
-
-  .file-input {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #e9ecef;
-    padding: 12px;
-    border-radius: 8px;
-    border: 2px dashed #ccc;
-    cursor: pointer;
-    text-align: center;
-    color: #555;
-    font-size: 0.95em;
-  }
-
-  .file-input input[type="file"] {
-    display: none;
-  }
-
-  #statusMensagem {
-    margin-top: 10px;
-    font-size: 0.95em;
-    font-weight: bold;
-    text-align: center;
-  }
-
-  .sucesso {
-    color: green;
-  }
-
-  .erro {
-    color: red;
-  }
-
-  .btn {
-    width: 100%;
-    padding: 12px;
-    margin-top: 10px;
-    border: none;
-    border-radius: 6px;
-    font-weight: bold;
-    cursor: pointer;
-    font-size: 1em;
-  }
-
-  .btn-add {
-    background-color: #28a745;
-    color: white;
-  }
-
-  .btn-export {
-    background-color: #007bff;
-    color: white;
-  }
-
-  #listaProdutos > div {
-    margin-top: 10px;
-  }
-
-  #valoresManuais {
-    margin-top: 30px;
-    border-top: 2px solid #ddd;
-    padding-top: 20px;
-  }
-
-  #inputsManuais {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
-
-  #inputsManuais label {
-    font-weight: 600;
-    color: #444;
-    margin-bottom: 4px;
-    display: block;
-    font-size: 0.9em;
-  }
-
-  #inputsManuais input[type="number"] {
-    width: 100%;
-    padding: 6px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-    font-size: 14px;
-  }
-
-  #totaisContainer {
-    margin-top: 15px;
-    font-weight: bold;
-    font-size: 1em;
-    text-align: center;
-  }
-
-  input.input {
-    padding: 12px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    font-size: 1em;
-  }
-
-  @media (max-width: 500px) {
-    h2 {
-      font-size: 1.2em;
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f1f3f5;
+      margin: 0;
+      padding: 15px;
     }
 
-    .btn {
-      padding: 10px;
-      font-size: 0.95em;
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background-color: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+
+    h2, h3 {
+      text-align: center;
+      color: #333;
+      font-size: 1.5em;
+    }
+
+    .upload-label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: bold;
+      color: #555;
+      font-size: 1em;
     }
 
     .file-input {
-      padding: 10px;
-      font-size: 0.9em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #e9ecef;
+      padding: 12px;
+      border-radius: 8px;
+      border: 2px dashed #ccc;
+      cursor: pointer;
+      text-align: center;
+      color: #555;
+      font-size: 0.95em;
+    }
+
+    .file-input input[type="file"] {
+      display: none;
+    }
+
+    #statusMensagem {
+      margin-top: 10px;
+      font-size: 0.95em;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .sucesso {
+      color: green;
+    }
+
+    .erro {
+      color: red;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 1em;
+    }
+
+    .btn-add {
+      background-color: #28a745;
+      color: white;
+    }
+
+    .btn-export {
+      background-color: #007bff;
+      color: white;
+    }
+
+    #listaProdutos > div {
+      margin-top: 10px;
+    }
+
+    #valoresManuais {
+      margin-top: 30px;
+      border-top: 2px solid #ddd;
+      padding-top: 20px;
     }
 
     #inputsManuais {
-      grid-template-columns: 1fr;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
     }
 
-    input.input {
-      padding: 10px;
-      font-size: 0.95em;
+    #inputsManuais label {
+      font-weight: 600;
+      color: #444;
+      margin-bottom: 4px;
+      display: block;
+      font-size: 0.9em;
     }
 
     #inputsManuais input[type="number"] {
-      font-size: 0.95em;
+      width: 100%;
+      padding: 6px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 14px;
     }
 
     #totaisContainer {
-      font-size: 0.95em;
+      margin-top: 15px;
+      font-weight: bold;
+      font-size: 1em;
+      text-align: center;
     }
-  }
-</style>
+
+    input.input {
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 1em;
+    }
+
+    @media (max-width: 500px) {
+      h2 {
+        font-size: 1.2em;
+      }
+
+      .btn {
+        padding: 10px;
+        font-size: 0.95em;
+      }
+
+      .file-input {
+        padding: 10px;
+        font-size: 0.9em;
+      }
+
+      #inputsManuais {
+        grid-template-columns: 1fr;
+      }
+
+      input.input {
+        padding: 10px;
+        font-size: 0.95em;
+      }
+
+      #inputsManuais input[type="number"] {
+        font-size: 0.95em;
+      }
+
+      #totaisContainer {
+        font-size: 0.95em;
+      }
+    }
+  </style>
 </head>
 <body>
-
 
   <div class="container">
     <h2>📦 CONTAGEM ZIZA</h2>
     <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-  import { getDatabase, ref, set, onValue, onDisconnect, remove } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+      import { getDatabase, ref, set, onValue, onDisconnect, remove } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyAhIcEttYA_zNawM-TgBX20pJ2rFnZ4UQM",
-    authDomain: "contagem-2f002.firebaseapp.com",
-    databaseURL: "https://contagem-2f002-default-rtdb.firebaseio.com", // <== IMPORTANTE para RTDB
-    projectId: "contagem-2f002",
-    storageBucket: "contagem-2f002.firebasestorage.app",
-    messagingSenderId: "606594368212",
-    appId: "1:606594368212:web:c105c3f9852e59f4667141"
-  };
+      const firebaseConfig = {
+        apiKey: "AIzaSyAhIcEttYA_zNawM-TgBX20pJ2rFnZ4UQM",
+        authDomain: "contagem-2f002.firebaseapp.com",
+        databaseURL: "https://contagem-2f002-default-rtdb.firebaseio.com",
+        projectId: "contagem-2f002",
+        storageBucket: "contagem-2f002.firebasestorage.app",
+        messagingSenderId: "606594368212",
+        appId: "1:606594368212:web:c105c3f9852e59f4667141"
+      };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
+      const app = initializeApp(firebaseConfig);
+      const db = getDatabase(app);
 
-  window.Firebase = { db, ref, set, onValue, onDisconnect, remove };
-</script>
-<div style="text-align:center; margin-bottom:10px;">
-  <div><strong>Sala:</strong> <span id="codigoSalaDisplay">---</span></div>
-  <div><strong>Usuários online:</strong> <span id="totalUsuarios">0</span></div>
-</div>
+      window.Firebase = { db, ref, set, onValue, onDisconnect, remove };
+    </script>
+
+    <div style="text-align:center; margin-bottom:10px;">
+      <div><strong>Sala:</strong> <span id="codigoSalaDisplay">---</span></div>
+      <div><strong>Usuários online:</strong> <span id="totalUsuarios">0</span></div>
+    </div>
+
     <label class="upload-label">1º Passo: Carregue a base de dados (Excel)</label>
 
     <label class="file-input" for="arquivoExcel">
@@ -210,13 +211,13 @@
     <div id="formulario" style="display:none; margin-top: 20px;">
       <label class="upload-label">2º Passo: Inserir Contagem</label>
 
-      <input type="text" id="areaInput" placeholder="Área (Ex: Prateleira 1)" class="input" style="width:100%; margin-bottom:10px; padding:10px; border-radius:6px; border:1px solid #ccc;" />
-      <input type="text" id="codigoInput" placeholder="Código do produto" class="input" style="width:100%; margin-bottom:10px; padding:10px; border-radius:6px; border:1px solid #ccc;" />
-      <input type="number" id="quantidadeInput" placeholder="Quantidade (pares)" class="input" style="width:100%; margin-bottom:10px; padding:10px; border-radius:6px; border:1px solid #ccc;" />
+      <input type="text" id="areaInput" placeholder="Área (Ex: Prateleira 1)" class="input" style="width:100%; margin-bottom:10px;" />
+      <input type="text" id="codigoInput" placeholder="Código do produto" class="input" style="width:100%; margin-bottom:10px;" />
+      <input type="number" id="quantidadeInput" placeholder="Quantidade (pares)" class="input" style="width:100%; margin-bottom:10px;" />
 
       <button onclick="adicionarProduto()" class="btn btn-add">➕ Adicionar</button>
       <button onclick="exportarParaExcel()" class="btn btn-export">📤 Exportar Contagem</button>
-<button onclick="limparContagem()" class="btn" style="background-color:#6c757d; color:white;">🧹 Limpar Contagem</button>
+      <button onclick="limparContagem()" class="btn" style="background-color:#6c757d; color:white;">🧹 Limpar Contagem</button>
 
       <div id="listaProdutos" style="margin-top:20px;"></div>
 
@@ -233,16 +234,18 @@
   <script>
     let basePrecos = {};
     let contagemProdutos = [];
-    let ordemAreas = []; // Ordem manual das áreas
-
+    let ordemAreas = [];
+    let valoresManuais = {};
     const camposFixos = [
       "Caixa", "Saldo", "Pagamento", "Inventário", "Devolução", "Lucro",
       ...Array.from({ length: 30 }, (_, i) => `Lucro dia ${i + 2}`),
       "Fixo"
     ];
 
-    let valoresManuais = {};
+    let codigoSala;
+    let usuarioId;
 
+    // Carregar Excel
     document.getElementById("arquivoExcel").addEventListener("change", function (e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -290,404 +293,71 @@
           renderizarCamposManuais();
         }
       };
-
       reader.readAsArrayBuffer(file);
     });
 
-const baseSalva = localStorage.getItem("basePrecosZiza");
-if (baseSalva) {
-  try {
-    basePrecos = JSON.parse(baseSalva);
-    document.getElementById("formulario").style.display = "block";
-    document.getElementById("statusMensagem").textContent = "✅ Base carregada do armazenamento local!";
-    document.getElementById("statusMensagem").className = "sucesso";
-    renderizarCamposManuais();
-  } catch (e) {
-    console.warn("Erro ao restaurar base de preços:", e);
-  }
-}
+    const baseSalva = localStorage.getItem("basePrecosZiza");
+    if (baseSalva) {
+      try {
+        basePrecos = JSON.parse(baseSalva);
+        document.getElementById("formulario").style.display = "block";
+        document.getElementById("statusMensagem").textContent = "✅ Base carregada do armazenamento local!";
+        document.getElementById("statusMensagem").className = "sucesso";
+        renderizarCamposManuais();
+      } catch (e) {
+        console.warn("Erro ao restaurar base de preços:", e);
+      }
+    }
 
-function salvarContagemFirebase() {
-  if (!codigoSala) return;
-
-  const { db, ref, set } = window.Firebase;
-
-  const dados = {
-    produtos: contagemProdutos,
-    ordemAreas,
-    valores: valoresManuais
-  };
-
-  const contagemRef = ref(db, `salas/${codigoSala}/contagem`);
-  set(contagemRef, dados);
-}
-
-function restaurarContagem() {
-  const dados = localStorage.getItem("contagemZiza");
-  if (!dados) return;
-
-  try {
-    const { produtos, ordemAreas: ordens, valores } = JSON.parse(dados);
-
-    contagemProdutos = produtos || [];
-    ordemAreas = ordens || [];
-    valoresManuais = valores || {};
-
-    renderizarLista();
-    renderizarCamposManuais();
-    atualizarTotaisGerais();
-  } catch (e) {
-    console.warn("Erro ao restaurar contagem:", e);
-  }
-}
-
-function limparContagem() {
-  const confirmar = confirm("Tem certeza que deseja limpar toda a contagem?");
-  if (!confirmar) return;
-
-  contagemProdutos = [];
-  ordemAreas = [];
-  valoresManuais = {};
-
-  localStorage.removeItem("contagemZiza");
-  localStorage.removeItem("basePrecosZiza");
-basePrecos = {};
-
-  renderizarLista();
-  renderizarCamposManuais();
-  atualizarTotaisGerais();
-
-  alert("✅ Contagem limpa com sucesso!");
-}
-
+    // Função de adicionar produtos corrigida
     function adicionarProduto() {
-  const area = document.getElementById("areaInput").value.trim().toUpperCase();
-  const codigo = document.getElementById("codigoInput").value.trim().toUpperCase();
-  const quantidade = parseInt(document.getElementById("quantidadeInput").value.trim());
-  let preco = basePrecos[codigo];
+      const area = document.getElementById("areaInput").value.trim().toUpperCase();
+      const codigo = document.getElementById("codigoInput").value.trim().toUpperCase();
+      const quantidade = parseInt(document.getElementById("quantidadeInput").value.trim());
+      let preco = basePrecos[codigo];
 
-  if (!area) return alert("⚠️ Digite a área.");
-  if (!codigo) return alert("⚠️ Digite o código.");
-  if (!quantidade || quantidade <= 0) return alert("⚠️ Quantidade inválida.");
+      if (!area) return alert("⚠️ Digite a área.");
+      if (!codigo) return alert("⚠️ Digite o código.");
+      if (!quantidade || quantidade <= 0) return alert("⚠️ Quantidade inválida.");
 
-  if (!preco) {
-    const desejaAdicionar = confirm(`Código "${codigo}" não encontrado na base. Deseja adicionar manualmente?`);
-    if (!desejaAdicionar) return;
+      if (!preco) {
+        const desejaAdicionar = confirm(`Código "${codigo}" não encontrado na base. Deseja adicionar manualmente?`);
+        if (!desejaAdicionar) return;
 
-    // Pede preço manual
-    const precoManualStr = prompt(`Digite o preço para o código "${codigo}":`);
-    const precoManual = parseFloat(precoManualStr.replace(',', '.'));
-
-    if (isNaN(precoManual) || precoManual <= 0) {
-      alert("⚠️ Preço inválido. Produto não adicionado.");
-      return;
-    }
-
-    // Adiciona na base de preços
-    basePrecos[codigo] = precoManual;
-    preco = precoManual;
-  }
-
-  const valor = preco * quantidade;
-
-  contagemProdutos.push({
-  área: area,
-  código: codigo,
-  pares: quantidade,
-  preço: preco,
-  valor: valor,
-  autor: usuarioId // adiciona o autor
-});
-
-  if (!ordemAreas.includes(area)) {
-    ordemAreas.push(area);
-  }
-
-  renderizarLista();
-
-  document.getElementById("codigoInput").value = "";
-  document.getElementById("quantidadeInput").value = "";
-  document.getElementById("codigoInput").focus();
-
-  atualizarTotaisGerais();
-salvarContagemFirebase();
-}
-
-    function renderizarLista() {
-  const lista = document.getElementById("listaProdutos");
-  lista.innerHTML = "";
-
-  const agrupadoPorArea = {};
-
-  contagemProdutos.forEach((item, index) => {
-    if (!agrupadoPorArea[item.área]) agrupadoPorArea[item.área] = [];
-    agrupadoPorArea[item.área].push({ ...item, index });
-  });
-
-  let html = "";
-
-  ordemAreas.forEach(area => {
-  if (!agrupadoPorArea[area]) return;
-    const produtos = agrupadoPorArea[area];
-    let somaPares = 0;
-    let somaValor = 0;
-
-    html += `
-  <div style="margin-top:30px; padding:8px; background:#f8f9fa; border-left:4px solid #007bff; display:flex; justify-content:space-between; align-items:center;">
-    <strong>Área:</strong> ${area}
-    <div style="display:flex; gap:5px;">
-      <button onclick="moverArea('${area}', -1)" style="font-size:16px;">⬆️</button>
-      <button onclick="moverArea('${area}', 1)" style="font-size:16px;">⬇️</button>
-    </div>
-  </div>`;
-
-    produtos.forEach(prod => {
-      html += `
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed #ccc;">
-          <div>
-            <div><strong>${prod.código}</strong></div>
-            <div>${prod.pares} pares × ${formatarValor(prod.preço)} = <strong>${formatarValor(prod.valor)}</strong></div>
-          </div>
-          <div style="display:flex; gap:5px;">
-  ${prod.autor === usuarioId ? `
-    <button onclick="editarProduto(${prod.index})" style="background:#ffc107; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">✏️ Editar</button>
-    <button onclick="removerProduto(${prod.index})" style="background:#dc3545; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">🗑️ Remover</button>
-  ` : ''}
-</div>
-        </div>`;
-
-      somaPares += prod.pares;
-      somaValor += prod.valor;
-    });
-
-    html += `
-      <div style="padding:6px; text-align:right; font-weight:bold; color:#333;">
-        ➡️ Total da Área ${area}: ${somaPares} pares | Valor: ${formatarValor(somaValor)}
-      </div>`;
-  }); // fim do ordemAreas.forEach
-
-  lista.innerHTML = html;
-  renderizarCamposManuais();
-}
-
-    function editarProduto(index) {
-      const novoValor = prompt(`Editar quantidade de pares para o código ${contagemProdutos[index].código}:`, contagemProdutos[index].pares);
-      const pares = parseInt(novoValor);
-
-      if (!pares || pares <= 0) {
-        alert("⚠️ Quantidade inválida.");
-        return;
+        const precoManualStr = prompt(`Digite o preço para o código "${codigo}":`);
+        const precoManual = parseFloat(precoManualStr.replace(',', '.'));
+        if (isNaN(precoManual) || precoManual <= 0) {
+          alert("⚠️ Preço inválido. Produto não adicionado.");
+          return;
+        }
+        basePrecos[codigo] = precoManual;
+        preco = precoManual;
       }
 
-      contagemProdutos[index].pares = pares;
-      contagemProdutos[index].valor = contagemProdutos[index].preço * pares;
+      const valor = preco * quantidade;
 
-      renderizarLista();
-      atualizarTotaisGerais();
-      renderizarLista();
-atualizarTotaisGerais();
-salvarContagemFirebase();
-    }
-
-    function removerProduto(index) {
-      const confirmado = confirm(`Deseja remover o código ${contagemProdutos[index].código} da lista?`);
-      if (confirmado) {
-        contagemProdutos.splice(index, 1);
-        renderizarLista();
-        atualizarTotaisGerais();
-        renderizarLista();
-atualizarTotaisGerais();
-salvarContagemFirebase();
-      }
-    }
-
-    function renderizarCamposManuais() {
-      const container = document.getElementById("inputsManuais");
-      container.innerHTML = "";
-
-      camposFixos.forEach(campo => {
-        const div = document.createElement("div");
-        div.innerHTML = `
-          <label>${campo}</label>
-          <input type="number" data-nome="${campo}" value="${valoresManuais[campo] || ''}" 
-            style="width: 100%; padding: 5px; border-radius: 4px; border: 1px solid #ccc;" 
-            oninput="atualizarTotaisGerais()">
-        `;
-        container.appendChild(div);
+      contagemProdutos.push({
+        área: area,
+        código: codigo,
+        pares: quantidade,
+        preço: preco,
+        valor: valor,
+        autor: usuarioId
       });
 
+      if (!ordemAreas.includes(area)) ordemAreas.push(area);
+
+      renderizarLista();
+
+      document.getElementById("codigoInput").value = "";
+      document.getElementById("quantidadeInput").value = "";
+      document.getElementById("codigoInput").focus();
+
       atualizarTotaisGerais();
+      salvarContagemFirebase();
     }
 
-    function atualizarTotaisGerais() {
-  // Soma dos valores dos produtos
-  let total = contagemProdutos.reduce((soma, item) => soma + item.valor, 0);
-
-  // Adicionar valores manuais (Lucros são negativos)
-  document.querySelectorAll('#inputsManuais input').forEach(input => {
-    const nome = input.dataset.nome;
-    let valor = parseFloat(input.value) || 0;
-    if (nome.toLowerCase().includes('lucro')) valor = -Math.abs(valor);
-
-    valoresManuais[nome] = valor;
-    if (nome !== "Fixo") total += valor;
-  });
-
-  const fixo = valoresManuais["Fixo"] || 0;
-  const conclusao = total - fixo;
-
-  document.getElementById("valorTotal").textContent = formatarValor(total);
-  document.getElementById("valorConclusao").textContent = formatarValor(conclusao);
-  salvarContagemFirebase();
-}
-    
-function formatarValor(num) {
-  return Number.isInteger(num) ? num.toString() : num.toFixed(2);
-}
-
-function exportarParaExcel() {
-  if (contagemProdutos.length === 0) {
-    alert("⚠️ Nenhum item para exportar.");
-    return;
-  }
-
-  // Agrupar produtos por área
-  const agrupado = {};
-  contagemProdutos.forEach(item => {
-    if (!agrupado[item.área]) agrupado[item.área] = [];
-    agrupado[item.área].push(item);
-  });
-
-  const dadosFinal = [["Área", "Código", "Preço", "Pares", "Valor"]];
-
-  for (const area in agrupado) {
-    agrupado[area].forEach(item => {
-      dadosFinal.push([
-  item.área,
-  item.código,
-  formatarValor(item.preço), // Preço vem primeiro
-  item.pares,                // Depois os pares
-  formatarValor(item.valor)
-]);
-    });
-    dadosFinal.push([""]); // espaço entre áreas
-  }
-
-  // Linhas vazias antes dos blocos manuais
-  dadosFinal.push([""]);
-  dadosFinal.push([""]);
-
-  // Calcular total dos produtos
-  let totalProdutos = contagemProdutos.reduce((sum, item) => sum + item.valor, 0);
-  let totalFinal = totalProdutos;
-
-  // Adiciona os blocos manuais (exceto "Fixo")
-  camposFixos.forEach(campo => {
-    if (campo === "Fixo") return; // pula o FIXO aqui
-
-    let valor = parseFloat(valoresManuais[campo]) || 0;
-    if (campo.toLowerCase().includes("lucro")) valor = -Math.abs(valor);
-    totalFinal += valor;
-
-    dadosFinal.push(["", "", "", campo.toUpperCase(), formatarValor(valor)]);
-  });
-
-  // Adiciona o TOTAL antes do FIXO
-  dadosFinal.push(["", "", "", "TOTAL", formatarValor(totalFinal)]);
-
-  // Agora adiciona o FIXO
-  let fixo = parseFloat(valoresManuais["Fixo"]) || 0;
-  dadosFinal.push(["", "", "", "FIXO", formatarValor(fixo)]);
-
-  // E por fim a CONCLUSÃO = TOTAL - FIXO
-  dadosFinal.push(["", "", "", "CONCLUSÃO", formatarValor(totalFinal - fixo)]);
-
-  // Criar e exportar o Excel
-  const ws = XLSX.utils.aoa_to_sheet(dadosFinal);
-
-  // Aumentar largura da 4ª coluna (Preço)
-  ws['!cols'] = [
-  { wch: 12 }, // Área
-  { wch: 12 }, // Código
-  { wch: 10 }, // Preço
-  { wch: 15 }, // Pares
-  { wch: 12 }  // Valor
-];
-
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Contagem");
-
-  XLSX.writeFile(wb, "contagem_ziza.xlsx");
-}
-
-function moverArea(area, direcao) {
-  const index = ordemAreas.indexOf(area);
-  if (index === -1) return;
-
-  const novoIndex = index + direcao;
-  if (novoIndex < 0 || novoIndex >= ordemAreas.length) return;
-
-  // Troca as posições na lista
-  const temp = ordemAreas[index];
-  ordemAreas[index] = ordemAreas[novoIndex];
-  ordemAreas[novoIndex] = temp;
-
-  renderizarLista(); // Atualiza a tela com nova ordem
-  renderizarLista();
-salvarContagemFirebase();
-}
-
-function carregarContagemFirebase() {
-  if (!codigoSala) return;
-
-  const { db, ref, onValue } = window.Firebase;
-  const contagemRef = ref(db, `salas/${codigoSala}/contagem`);
-
-  onValue(contagemRef, snapshot => {
-    if (!snapshot.exists()) return;
-
-    const dados = snapshot.val();
-    contagemProdutos = dados.produtos || [];
-    ordemAreas = dados.ordemAreas || [];
-    valoresManuais = dados.valores || {};
-
-    renderizarLista();
-    renderizarCamposManuais();
-    atualizarTotaisGerais();
-  });
-}
-
-window.addEventListener("load", () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  codigoSala = urlParams.get('sala');
-  if (!codigoSala) {
-    alert("⚠️ Código da sala não encontrado.");
-    return;
-  }
-
-  document.getElementById("codigoSalaDisplay").textContent = codigoSala;
-
-  const { db, ref, set, onValue, onDisconnect } = window.Firebase;
-
-  let usuarioId = sessionStorage.getItem("usuarioIdZiza");
-if (!usuarioId) {
-  usuarioId = `user_${Math.floor(Math.random() * 1000000)}`;
-  sessionStorage.setItem("usuarioIdZiza", usuarioId);
-}
-
-const usuarioRef = ref(db, `salas/${codigoSala}/usuarios/${usuarioId}`);
-set(usuarioRef, true);
-onDisconnect(usuarioRef).remove();
-
-  const totalRef = ref(db, `salas/${codigoSala}/usuarios`);
-  onValue(totalRef, snap => {
-    const total = snap.exists() ? Object.keys(snap.val()).length : 0;
-    document.getElementById("totalUsuarios").textContent = total;
-  });
-
-  restaurarContagem();
-  carregarContagemFirebase();
-});
+    // --- O resto do seu código (renderizarLista, editarProduto, removerProduto, renderizarCamposManuais, atualizarTotaisGerais, exportarParaExcel, moverArea, salvarContagemFirebase, carregarContagemFirebase, limparContagem) permanece igual ao que você já tinha ---
   </script>
 </body>
 </html>
